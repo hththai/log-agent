@@ -1,0 +1,51 @@
+# docker-compose.yml snippet
+version: '3.8'
+
+services:
+
+  # --- 1. PostgreSQL Database Service ---
+  postgres-db:
+    image: postgres:16-alpine
+    container_name: log_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "5432:5432" # Maps port 5432 to your Mac so you can use tools like DBeaver/TablePlus
+    volumes:
+      # Persists your database tables so your logs aren't deleted when the container stops
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - logging-network
+
+  log-agent:
+    build: .
+    container_name: log_agent
+    environment:
+      - LOG_PATTERN=${LOG_PATTERN}
+      - DB_DEVELOPMENT_MODE=${DB_DEVELOPMENT_MODE}
+      # Pass raw variables directly instead of assembling a complex string here
+      - DB_USER=${POSTGRES_USER}
+      - DB_PASSWORD=${POSTGRES_PASSWORD}
+      - DB_NAME=${POSTGRES_DB}
+      - DB_HOST=log_postgres
+      - DB_PORT=5432
+    volumes:
+      # - /var/run/docker.sock:/var/run/docker.sock:ro # Read-only access to Docker daemon
+      - ${OCR_PROJECT_LOG_DIR}:/incoming-logs/api:ro
+      - ${OCR_PROJECT_LOG_CLIENT}:/incoming-logs/client:ro
+      - ./services.json:/root/services.json:ro
+    restart: always
+    networks:
+      - logging-network
+
+# Define explicit volumes and isolated networks
+volumes:
+  postgres_data:
+    # Declared to guarantee persistent Mac storage for DB blocks
+
+networks:
+  logging-network:
+    driver: bridge

@@ -1,0 +1,8 @@
+# Environment — never commit real credentials
+.env
+
+# Build output
+agent
+
+# macOS
+.DS_Store

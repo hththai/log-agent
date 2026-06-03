@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+
+  postgres-db:
+    image: postgres:16-alpine
+    container_name: log_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - logging-network
+
+  log-agent:
+    build: .
+    container_name: log_agent
+    environment:
+      - DB_USER=${POSTGRES_USER}
+      - DB_PASSWORD=${POSTGRES_PASSWORD}
+      - DB_NAME=${POSTGRES_DB}
+      - DB_HOST=log_postgres
+      - DB_PORT=5432
+    volumes:
+      - ${OCR_PROJECT_LOG_DIR}:/incoming-logs/api:ro
+      - ${OCR_PROJECT_LOG_CLIENT}:/incoming-logs/client:ro
+      - ./services.json:/root/services.json:ro
+    restart: always
+    depends_on:
+      - postgres-db
+    networks:
+      - logging-network
+
+volumes:
+  postgres_data:
+
+networks:
+  logging-network:
+    driver: bridge

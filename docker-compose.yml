@@ -20,6 +20,12 @@ services:
     networks:
       - logging-network
 
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER}" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
   log-agent:
     build: .
     container_name: log_agent
@@ -41,6 +47,10 @@ services:
     restart: always
     networks:
       - logging-network
+
+    depends_on:
+      postgres-db:
+        condition: service_healthy
 
 # Define explicit volumes and isolated networks
 volumes:

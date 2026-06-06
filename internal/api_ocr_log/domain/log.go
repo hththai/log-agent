@@ -6,6 +6,7 @@ import "time"
 type ApiLog struct {
 	ID         int64     `json:"-"`
 	Time       time.Time `json:"time"`
+	Level      string    `json:"level"`
 	IP         string    `json:"ip"`
 	Method     string    `json:"method"`
 	Path       string    `json:"path"`

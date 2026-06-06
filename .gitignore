@@ -6,3 +6,6 @@ agent
 
 # macOS
 .DS_Store
+
+# Test fixtures
+**/*.log

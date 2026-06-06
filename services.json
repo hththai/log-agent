@@ -10,5 +10,11 @@
         "pattern": "/incoming-logs/client/*access*",
         "parser": "json",
         "table": "logs_ocr_client"
+    },
+    {
+        "name": "doc_invoice",
+        "pattern": "/incoming-logs/applog/*log",
+        "parser": "doc",
+        "table": "logs_doc_invoice"
     }
 ]

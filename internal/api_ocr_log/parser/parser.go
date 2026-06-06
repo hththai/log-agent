@@ -21,7 +21,9 @@ func ParserFactory(parserType string) (LogParser, error) {
 		return NewCSharpParser(), nil
 	case "python":
 		return NewPythonParser(), nil
+	case "doc":
+		return NewDocParser(), nil
 	default:
-		return nil, fmt.Errorf("unknown parser type %q — supported: nginx, json, csharp, python", parserType)
+		return nil, fmt.Errorf("unknown parser type %q — supported: nginx, json, csharp, python, doc", parserType)
 	}
 }

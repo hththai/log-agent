@@ -54,16 +54,19 @@ func (r *PostgresLogRepository) ensureTableExists(table string) error {
 		return nil
 	}
 
+	// ip/method/path/status are nullable: non-HTTP lines (system messages, debug events)
+	// have no HTTP context. raw_payload TEXT stores the original line verbatim for recovery.
 	createTable := fmt.Sprintf(`
 		CREATE TABLE IF NOT EXISTS %s (
 			id          SERIAL PRIMARY KEY,
 			log_time    TIMESTAMP WITH TIME ZONE NOT NULL,
-			ip          INET NOT NULL,
-			method      VARCHAR(10) NOT NULL,
-			path        TEXT NOT NULL,
-			status      INT NOT NULL,
+			level       VARCHAR(10),
+			ip          INET,
+			method      VARCHAR(10),
+			path        TEXT,
+			status      INT,
 			duration_ms NUMERIC(10, 2),
-			raw_payload JSONB NOT NULL
+			raw_payload TEXT NOT NULL
 		)`, pq.QuoteIdentifier(table))
 
 	createIndex := fmt.Sprintf(
@@ -91,18 +94,36 @@ func (r *PostgresLogRepository) Save(table string, logItem *domain.ApiLog) error
 	}
 
 	query := fmt.Sprintf(`
-		INSERT INTO %s (log_time, ip, method, path, status, duration_ms, raw_payload)
-		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		INSERT INTO %s (log_time, level, ip, method, path, status, duration_ms, raw_payload)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 		RETURNING id`, pq.QuoteIdentifier(table))
 
 	return r.db.QueryRow(
 		query,
 		logItem.Time,
-		logItem.IP,
-		logItem.Method,
-		logItem.Path,
-		logItem.Status,
+		nullIfEmpty(logItem.Level),
+		nullIfEmpty(logItem.IP),
+		nullIfEmpty(logItem.Method),
+		nullIfEmpty(logItem.Path),
+		nullIfZero(logItem.Status),
 		logItem.DurationMs,
 		logItem.RawPayload,
 	).Scan(&logItem.ID)
+}
+
+// nullIfEmpty returns nil for empty strings so Postgres stores NULL instead of an invalid value.
+// This is critical for typed columns like INET where an empty string would cause a constraint error.
+func nullIfEmpty(s string) interface{} {
+	if s == "" {
+		return nil
+	}
+	return s
+}
+
+// nullIfZero returns nil for zero so non-HTTP log lines (status=0) store NULL rather than 0.
+func nullIfZero(n int) interface{} {
+	if n == 0 {
+		return nil
+	}
+	return n
 }

@@ -31,6 +31,7 @@ func (uc *LogProcessor) ProcessLine(service domain.LogService, rawLine string) {
 	apiLog.Source = service.Name
 
 	if err := uc.repo.Save(service.Table, apiLog); err != nil {
-		log.Printf("[%s] Database save failure on table %s: %v", service.Name, service.Table, err)
+		// Log raw_payload so the original line can be recovered and re-ingested after the fault is resolved.
+		log.Printf("[%s] Database save failure on table %s: %v | raw_payload: %s", service.Name, service.Table, err, apiLog.RawPayload)
 	}
 }

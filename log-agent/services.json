@@ -1,0 +1,20 @@
+[
+    {
+        "name": "ocr_api",
+        "pattern": "/incoming-logs/api/*log*",
+        "parser": "json",
+        "table": "logs_ocr_api"
+    },
+    {
+        "name": "ocr_client",
+        "pattern": "/incoming-logs/client/*access*",
+        "parser": "json",
+        "table": "logs_ocr_client"
+    },
+    {
+        "name": "doc_invoice",
+        "pattern": "/incoming-logs/applog/*log",
+        "parser": "doc",
+        "table": "logs_doc_invoice"
+    }
+]

@@ -23,12 +23,11 @@ services:
     restart: always
     networks:
       - logging-network
-
-volumes:
+  # volumes:
   # postgres_data:
-  server_logdata:
-    external: true
-    # Declared to guarantee persistent Mac storage for DB blocks
+  # server_logdata:
+  #   external: true
+  # Declared to guarantee persistent Mac storage for DB blocks
 
 networks:
   logging-network:

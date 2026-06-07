@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -13,10 +14,15 @@ import (
 	srv "log-agent/internal/api_ocr_log/services"
 
 	"github.com/hpcloud/tail"
+	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 )
 
 func main() {
+	if os.Getenv("APP_ENV") == "local" {
+		_ = godotenv.Load(".env.local")
+	}
+
 	connStr := fmt.Sprintf(
 		"host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
 		os.Getenv("DB_HOST"),
@@ -42,18 +48,19 @@ func main() {
 	}
 
 	processor := srv.NewLogProcessor(logRepo)
+	checkpoint := srv.NewCheckpointState("file-offsets.json")
 	tailedFiles := make(map[string]bool)
 
 	log.Println("Log Agent Engine started. Monitoring targets...")
 
 	for {
-		discoverFiles(services, tailedFiles, processor)
+		discoverFiles(services, tailedFiles, processor, checkpoint)
 		time.Sleep(10 * time.Second)
 	}
 }
 
 // discoverFiles scans each service pattern for new log files and spawns a worker per new file.
-func discoverFiles(services []domain.LogService, tailedFiles map[string]bool, processor *srv.LogProcessor) {
+func discoverFiles(services []domain.LogService, tailedFiles map[string]bool, processor *srv.LogProcessor, checkpoint *srv.CheckpointState) {
 	for _, svc := range services {
 		files, err := filepath.Glob(svc.Pattern)
 		if err != nil {
@@ -63,17 +70,22 @@ func discoverFiles(services []domain.LogService, tailedFiles map[string]bool, pr
 		for _, file := range files {
 			if !tailedFiles[file] {
 				tailedFiles[file] = true
-				go launchLogWorker(svc, file, processor)
+				go launchLogWorker(svc, file, processor, checkpoint)
 			}
 		}
 	}
 }
 
-// launchLogWorker tails a single file and forwards each line to the processor.
-func launchLogWorker(svc domain.LogService, filePath string, processor *srv.LogProcessor) {
-	log.Printf("[Worker] tracking %s | parser=%s | table=%s", svc.Name, svc.Parser, svc.Table)
+// launchLogWorker tails a single file from the last saved offset and forwards each line to the processor.
+func launchLogWorker(svc domain.LogService, filePath string, processor *srv.LogProcessor, checkpoint *srv.CheckpointState) {
+	offset := checkpoint.Get(filePath)
+	log.Printf("[Worker] tracking %s | parser=%s | table=%s | offset=%d", svc.Name, svc.Parser, svc.Table, offset)
 
-	t, err := tail.TailFile(filePath, tail.Config{Follow: true, ReOpen: true})
+	t, err := tail.TailFile(filePath, tail.Config{
+		Follow:   true,
+		ReOpen:   true,
+		Location: &tail.SeekInfo{Offset: offset, Whence: io.SeekStart},
+	})
 	if err != nil {
 		log.Printf("[Worker] failed to tail %s: %v", filePath, err)
 		return
@@ -81,5 +93,7 @@ func launchLogWorker(svc domain.LogService, filePath string, processor *srv.LogP
 
 	for line := range t.Lines {
 		processor.ProcessLine(svc, line.Text)
+		offset += int64(len(line.Text)) + 1 // +1 for newline
+		checkpoint.Save(filePath, offset)
 	}
 }

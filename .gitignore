@@ -1,5 +1,6 @@
 # Environment — never commit real credentials
 .env
+.env.local
 
 # Build output
 agent
@@ -9,3 +10,5 @@ agent
 
 # Test fixtures
 **/*.log
+
+file-offsets.json

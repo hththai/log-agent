@@ -53,3 +53,11 @@ async def get_logs(
     total = await repo.count(table, filters)
     items = await repo.list(table, filters, page, page_size)
     return LogsResponse(table=table, total=total, page=page, page_size=page_size, items=items)
+
+#count total items by table
+@router.get("/{table}/count")
+async def get_logs_count(
+    table: Annotated[str, Depends(validate_table)],
+    repo: Annotated[LogRepository, Depends(get_repo)]
+) -> int:
+    return await repo.count(table)

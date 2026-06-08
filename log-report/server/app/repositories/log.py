@@ -40,9 +40,11 @@ class LogRepository:
         )
         return [r["table_name"] for r in rows]
 
-    async def count(self, table: str, filters: LogFilter) -> int:
-        where, params = self._where(filters)
+    async def count(self, table: str, filters: LogFilter | None = None) -> int:
         # table is pre-validated against ALLOWED_TABLES before reaching here
+        if filters is None:
+            return await self._pool.fetchval(f"SELECT COUNT(*) FROM {table}")
+        where, params = self._where(filters)
         return await self._pool.fetchval(
             f"SELECT COUNT(*) FROM {table} {where}", *params
         )

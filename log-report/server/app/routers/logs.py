@@ -27,6 +27,29 @@ async def list_tables(repo: Annotated[LogRepository, Depends(get_repo)]):
     return {"tables": await repo.list_tables()}
 
 
+@router.get("/logs", response_model=LogsResponse)
+async def get_all_logs(
+    repo: Annotated[LogRepository, Depends(get_repo)],
+    page: Annotated[int, Query(ge=1)] = 1,
+    page_size: Annotated[int, Query(ge=1, le=500)] = 50,
+    level: Optional[str] = None,
+    status: Optional[int] = None,
+    method: Optional[str] = None,
+    from_time: Optional[datetime] = None,
+    to_time: Optional[datetime] = None,
+):
+    filters = LogFilter(
+        level=level,
+        status=status,
+        method=method,
+        from_time=from_time,
+        to_time=to_time,
+    )
+    total = await repo.count_all(filters)
+    items = await repo.list_all(filters, page, page_size)
+    return LogsResponse(table="all", total=total, page=page, page_size=page_size, items=items)
+
+
 @router.get(
     "/logs/{table}",
     response_model=LogsResponse,

@@ -48,7 +48,7 @@ func main() {
 	}
 
 	processor := srv.NewLogProcessor(logRepo)
-	checkpoint := srv.NewCheckpointState("file-offsets.json")
+	checkpoint := srv.NewCheckpointState("/state/file-offsets.json")
 	tailedFiles := make(map[string]bool)
 
 	log.Println("Log Agent Engine started. Monitoring targets...")

@@ -66,7 +66,8 @@ func (r *PostgresLogRepository) ensureTableExists(table string) error {
 			path        TEXT,
 			status      INT,
 			duration_ms NUMERIC(10, 2),
-			raw_payload TEXT NOT NULL
+			raw_payload TEXT NOT NULL,
+			name_service VARCHAR(25)
 		)`, pq.QuoteIdentifier(table))
 
 	createIndex := fmt.Sprintf(
@@ -94,8 +95,8 @@ func (r *PostgresLogRepository) Save(table string, logItem *domain.ApiLog) error
 	}
 
 	query := fmt.Sprintf(`
-		INSERT INTO %s (log_time, level, ip, method, path, status, duration_ms, raw_payload)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		INSERT INTO %s (log_time, level, ip, method, path, status, duration_ms, raw_payload, name_service)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 		RETURNING id`, pq.QuoteIdentifier(table))
 
 	return r.db.QueryRow(
@@ -108,6 +109,7 @@ func (r *PostgresLogRepository) Save(table string, logItem *domain.ApiLog) error
 		nullIfZero(logItem.Status),
 		logItem.DurationMs,
 		logItem.RawPayload,
+		nullIfEmpty(logItem.Source),
 	).Scan(&logItem.ID)
 }
 

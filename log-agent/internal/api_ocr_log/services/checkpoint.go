@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"os"
+	"path/filepath"
 	"sync"
 )
 
@@ -19,6 +20,9 @@ func NewCheckpointState(path string) *CheckpointState {
 	cs := &CheckpointState{
 		path:    path,
 		offsets: make(map[string]int64),
+	}
+	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+		log.Printf("[Checkpoint] Failed to create state directory: %v", err)
 	}
 	data, err := os.ReadFile(path)
 	if err == nil {

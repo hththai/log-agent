@@ -12,14 +12,32 @@ services:
       - DB_USER=${POSTGRES_USER}
       - DB_PASSWORD=${POSTGRES_PASSWORD}
       - DB_NAME=${POSTGRES_DB}
-      - DB_HOST=log_postgres
+      - DB_HOST=${POSTGRES_HOST}
       - DB_PORT=5432
     volumes:
-      # - /var/run/docker.sock:/var/run/docker.sock:ro # Read-only access to Docker daemon
-      - ${OCR_PROJECT_LOG_DIR}:/incoming-logs/api:ro
-      - ${OCR_PROJECT_LOG_CLIENT}:/incoming-logs/client:ro
-      - ${OCR_DOC_INVOICE}:/incoming-logs/applog:ro
-      - ./services.json:/root/services.json:ro
+      - type: bind
+        source: ${OCR_PROJECT_LOG_DIR}
+        target: /incoming-logs/api
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${OCR_PROJECT_LOG_CLIENT}
+        target: /incoming-logs/client
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${OCR_DOC_INVOICE}
+        target: /incoming-logs/applog
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ./services.json
+        target: /root/services.json
+        read_only: true
+      - agent_state:/state
     restart: always
     networks:
       - logging-network
@@ -28,6 +46,9 @@ services:
   # server_logdata:
   #   external: true
   # Declared to guarantee persistent Mac storage for DB blocks
+
+volumes:
+  agent_state:
 
 networks:
   logging-network:

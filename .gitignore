@@ -12,3 +12,13 @@ agent
 **/*.log
 
 file-offsets.json
+
+# log-report
+log-report/server/.venv/
+log-report/server/__pycache__/
+log-report/server/**/__pycache__/
+log-report/server/**/*.pyc
+log-report/server/**/*.pyo
+log-report/server/.pytest_cache/
+log-report/server/.mypy_cache/
+log-report/server/.ruff_cache/

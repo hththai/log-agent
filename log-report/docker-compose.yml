@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  log-report:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: log_report
+    restart: always
+    environment:
+      DB_HOST: log_postgres
+      DB_PORT: 5432
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_NAME: ${POSTGRES_DB}
+    ports:
+      - "${SERVER_PORT:-8000}:8000"
+    # Start log-agent's DB stack first: cd ../log-agent && docker compose -f docker-compose.db.yml up -d
+    networks:
+      - logging-network
+
+networks:
+  logging-network:
+    external: true
+    driver: bridge

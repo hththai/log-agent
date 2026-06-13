@@ -22,3 +22,9 @@ log-report/server/**/*.pyo
 log-report/server/.pytest_cache/
 log-report/server/.mypy_cache/
 log-report/server/.ruff_cache/
+
+# test http
+*.http
+# .venv
+.venv/
+# pyproject.toml

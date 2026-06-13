@@ -3,5 +3,12 @@
 ###
 GET http://localhost:8000/health
 
+
+### list table
+GET {{host}}/tables
+
 ###
-GET {{{host}}}/health
+GET {{host}}/logs/logs_doc_invoice
+
+###
+GET {{host}}/logs

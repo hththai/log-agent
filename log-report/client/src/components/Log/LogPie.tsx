@@ -1,13 +1,13 @@
+import { createContext, useContext, useState } from 'react'
 import { Pie, PieChart, Sector, Tooltip } from 'recharts';
-import type { PieSectorShapeProps, TooltipIndex, PieLabelRenderProps } from 'recharts';
+import type { PieSectorShapeProps, TooltipIndex, PieLabelRenderProps, PieSectorDataItem } from 'recharts';
 import type { ServiceCount } from '@/api/log'
 
-
-// const data = [
-//     { 'name_service': 'doc_invoice', 'count': 50 },
-//     { 'name_service': 'doc_service', 'count': 300 }]
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 const RADIAN = Math.PI / 180;
+
+const SelectedIndexContext = createContext<number | undefined>(undefined)
+
 const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: PieLabelRenderProps) => {
     if (cx == null || cy == null || innerRadius == null || outerRadius == null) {
         return null;
@@ -46,7 +46,6 @@ const PieGradient = (props: PieSectorShapeProps) => {
                 >
                     <stop offset="0%" stopColor={COLORS[props.index % COLORS.length]} stopOpacity={0} />
                     <stop offset="100%" stopColor={COLORS[props.index % COLORS.length]} stopOpacity={0.8} />
-
                 </radialGradient>
                 <clipPath id={`clipPath${props.index}`}>
                     <Sector {...props} />
@@ -63,34 +62,53 @@ const PieGradient = (props: PieSectorShapeProps) => {
     );
 };
 
+function PieGradientWithActive(props: PieSectorShapeProps) {
+    const selectedIndex = useContext(SelectedIndexContext)
+    return <PieGradient {...props} isActive={props.index === selectedIndex} />
+}
 
 function LogPie({
     isAnimationActive,
     defaultIndex,
     data,
-    name
+    name,
+    onSliceClick,
 }: {
     readonly isAnimationActive?: boolean;
     readonly defaultIndex?: TooltipIndex;
     readonly data: ServiceCount[] | undefined;
     readonly name?: string | null;
+    readonly onSliceClick?: (service: string | null) => void;
 }) {
+    const [selectedIndex, setSelectedIndex] = useState<number | undefined>(undefined)
+
+    function handleClick(entry: PieSectorDataItem, index: number) {
+        const next = selectedIndex === index ? undefined : index
+        setSelectedIndex(next)
+        onSliceClick?.(next === undefined ? null : (entry as PieSectorDataItem & ServiceCount).name_service)
+    }
 
     return (
-        <div className='flex flex-col items-center'>
-            <PieChart style={{ width: '100%', maxWidth: '500px', maxHeight: '80vh', aspectRatio: 1 }} responsive>
-                <Pie
-                    data={data}
-                    dataKey="count"
-                    nameKey={data && data.length > 0 ? Object.keys(data[0])[0] : ''}
-                    isAnimationActive={isAnimationActive}
-                    shape={PieGradient} innerRadius="20%"
-                    label={renderCustomizedLabel}
-                    labelLine={false} />
-                <Tooltip defaultIndex={defaultIndex} />
-            </PieChart>
-            {name && name.trim() !== "" && (<span className='font-bold'>{name}</span>)}
-        </div>
+        <SelectedIndexContext.Provider value={selectedIndex}>
+            <div className='flex flex-col items-center'>
+                <PieChart style={{ width: '100%', maxWidth: '500px', maxHeight: '80vh', aspectRatio: 1 }} responsive>
+                    <Pie
+                        data={data}
+                        dataKey="count"
+                        nameKey="name_service"
+                        isAnimationActive={isAnimationActive}
+                        shape={PieGradientWithActive}
+                        innerRadius="20%"
+                        label={renderCustomizedLabel}
+                        labelLine={false}
+                        onClick={handleClick}
+                        style={{ cursor: 'pointer' }}
+                    />
+                    <Tooltip defaultIndex={defaultIndex} />
+                </PieChart>
+                {name?.trim() && (<span className='font-bold'>{name}</span>)}
+            </div>
+        </SelectedIndexContext.Provider>
     );
 }
 

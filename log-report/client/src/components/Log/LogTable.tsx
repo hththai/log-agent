@@ -1,5 +1,4 @@
-import { useMemo } from 'react'
-import React from 'react'
+import React, { useMemo, useEffect } from 'react'
 import {
     createColumnHelper,
     flexRender,
@@ -64,10 +63,23 @@ const columns = [
     })
 ]
 
-function LogTable({ data }: { readonly data: LogItem[] | undefined }) {
+function LogTable({
+    data,
+    serviceFilter,
+}: {
+    readonly data: LogItem[] | undefined;
+    readonly serviceFilter?: string | null;
+}) {
     const tableData = useMemo(() => data ?? [], [data])
 
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
+
+    useEffect(() => {
+        setColumnFilters(prev => {
+            const without = prev.filter(f => f.id !== 'name_service')
+            return serviceFilter ? [...without, { id: 'name_service', value: serviceFilter }] : without
+        })
+    }, [serviceFilter])
 
     const table = useReactTable({
         data: tableData,

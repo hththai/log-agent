@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import Info from '@/components/Log/Info'
 import LogTable from '@/components/Log/LogTable'
 import LogPie from '@/components/Log/LogPie'
@@ -7,6 +8,8 @@ import { getLogs } from '@/api/log'
 import type { ServiceCount, LogsResponse } from '@/api/log'
 
 export function LogReport() {
+    const [selectedService, setSelectedService] = useState<string | null>(null)
+
     const { isPending, error, data } = useQuery({
         queryKey: ['logData'],
         queryFn: getLogs,
@@ -30,8 +33,8 @@ export function LogReport() {
                 <Info infoName={'No Services'} value={services.length.toString()} />
                 <Info infoName={'No IP'} value={noIp.length.toString()} />
             </div>
-            <LogTable data={data.items} />
-            <LogPie data={serviceCount} name={"Services Type Portion"} />
+            <LogTable data={data.items} serviceFilter={selectedService} />
+            <LogPie data={serviceCount} name={"Services Type Portion"} onSliceClick={setSelectedService} />
         </div>
     )
 

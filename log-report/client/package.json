@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@faker-js/faker": "^10.3.0",
+    "@recharts/devtools": "^0.0.14",
     "@tailwindcss/vite": "^4.1.18",
     "@tanstack/match-sorter-utils": "latest",
     "@tanstack/react-devtools": "latest",
@@ -28,6 +29,7 @@
     "lucide-react": "^0.545.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "recharts": "^3.8.1",
     "tailwindcss": "^4.1.18"
   },
   "devDependencies": {

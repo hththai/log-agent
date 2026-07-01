@@ -18,8 +18,13 @@ export interface LogsResponse {
     items: LogItem[];
 }
 
+export interface ServiceCount {
+    name_service: string;
+    count: number;
+}
+
 export async function getLogs(): Promise<LogsResponse> {
-    const res = await fetch(`http://localhost:8000/logs`)
+    const res = await fetch(`http://localhost:8000/logs?page_size=10000`)
 
     if (!res.ok) throw new Error("Failed to fetch logs")
 

@@ -31,7 +31,7 @@ async def list_tables(repo: Annotated[LogRepository, Depends(get_repo)]):
 async def get_all_logs(
     repo: Annotated[LogRepository, Depends(get_repo)],
     page: Annotated[int, Query(ge=1)] = 1,
-    page_size: Annotated[int, Query(ge=1, le=500)] = 50,
+    page_size: Annotated[int, Query(ge=1, le=10000)] = 50,
     level: Optional[str] = None,
     status: Optional[int] = None,
     method: Optional[str] = None,

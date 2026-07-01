@@ -113,3 +113,7 @@ function LogPie({
 }
 
 export default LogPie
+
+// LogReport holds selectedService state and passes onSliceClick={setSelectedService} to LogPie and serviceFilter={selectedService} to LogTable
+// LogPie — clicking a slice calls onSliceClick(name_service); clicking the same slice again toggles it off (null). The selected slice gets the isActive stroke highlight via SelectedIndexContext → PieGradientWithActive
+// LogTable — the useEffect on serviceFilter injects/removes the name_service column filter whenever the prop changes, keeping the manual text filter for that column in sync

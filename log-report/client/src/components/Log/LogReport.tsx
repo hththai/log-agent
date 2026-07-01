@@ -18,18 +18,20 @@ export function LogReport() {
     if (isPending) return 'Loading...'
     if (error) return 'An error has occurred: ' + error.message
 
-    // Get number of distinct services
-    const services = data?.items ? [...new Set(data.items.map((item => item.name_service)))] : [];
+    const filteredItems = selectedService
+        ? data.items.filter(item => item.name_service === selectedService)
+        : data.items
 
-    // Get number of ip
-    const noIp = data?.items ? [...new Set(data.items.map((item => item.ip)))] : []
+    const totalRequests = filteredItems.length
+    const services = [...new Set(filteredItems.map(item => item.name_service))]
+    const noIp = [...new Set(filteredItems.map(item => item.ip))]
 
     const serviceCount: ServiceCount[] = getNumberOfServices(data);
 
     return (
         <div className='flex flex-col justify-center gap-4'>
             <div className='flex gap-x-2' >
-                <Info infoName={'Total Request'} value={data.total.toString()} />
+                <Info infoName={'Total Request'} value={totalRequests.toString()} />
                 <Info infoName={'No Services'} value={services.length.toString()} />
                 <Info infoName={'No IP'} value={noIp.length.toString()} />
             </div>

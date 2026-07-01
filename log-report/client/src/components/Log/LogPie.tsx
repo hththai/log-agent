@@ -64,7 +64,17 @@ const PieGradient = (props: PieSectorShapeProps) => {
 
 function PieGradientWithActive(props: PieSectorShapeProps) {
     const selectedIndex = useContext(SelectedIndexContext)
-    return <PieGradient {...props} isActive={props.index === selectedIndex} />
+    const isSelected = props.index === selectedIndex
+    const isDimmed = selectedIndex !== undefined && !isSelected
+    const outerRadius = isSelected && typeof props.outerRadius === 'number'
+        ? props.outerRadius + 10
+        : props.outerRadius
+
+    return (
+        <g opacity={isDimmed ? 0.3 : 1} style={{ transition: 'opacity 0.25s ease' }}>
+            <PieGradient {...props} isActive={isSelected} outerRadius={outerRadius} />
+        </g>
+    )
 }
 
 function LogPie({
@@ -117,3 +127,7 @@ export default LogPie
 // LogReport holds selectedService state and passes onSliceClick={setSelectedService} to LogPie and serviceFilter={selectedService} to LogTable
 // LogPie — clicking a slice calls onSliceClick(name_service); clicking the same slice again toggles it off (null). The selected slice gets the isActive stroke highlight via SelectedIndexContext → PieGradientWithActive
 // LogTable — the useEffect on serviceFilter injects/removes the name_service column filter whenever the prop changes, keeping the manual text filter for that column in sync
+// Selected slice — outerRadius + 10 pushes it outward like a "pull out" effect, plus the existing gradient stroke from isActive kicks in
+// Other slices when something is selected — opacity: 0.3 fades them to the background
+// No selection — all slices at full opacity, normal size
+// transition: opacity 0.25s ease — smooth fade in/out when switching selections

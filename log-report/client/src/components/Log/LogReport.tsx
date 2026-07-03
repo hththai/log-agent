@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import Info from '@/components/Log/Info'
+import { LogInfoBar } from '@/components/Log/LogInfoBar'
 import LogTable from '@/components/Log/LogTable'
 import LogPie from '@/components/Log/LogPie'
 import { useQuery } from '@tanstack/react-query'
@@ -30,11 +30,7 @@ export function LogReport() {
 
     return (
         <div className='flex flex-col justify-center gap-4'>
-            <div className='flex gap-x-2' >
-                <Info infoName={'Total Request'} value={totalRequests.toString()} />
-                <Info infoName={'No Services'} value={services.length.toString()} />
-                <Info infoName={'No IP'} value={noIp.length.toString()} />
-            </div>
+            <LogInfoBar totalRequests={totalRequests} servicesCount={services.length} ipCount={noIp.length} />
             <LogTable data={data.items} serviceFilter={selectedService} />
             <LogPie data={serviceCount} name={"Services Type Portion"} onSliceClick={setSelectedService} />
         </div>

@@ -1,4 +1,5 @@
 import React, { useMemo, useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import {
     createColumnHelper,
     flexRender,
@@ -17,7 +18,9 @@ import type { LogItem } from '@/api/log'
 
 function FacetedFilter({ column }: { readonly column: Column<LogItem, unknown> }) {
     const [open, setOpen] = useState(false)
-    const ref = useRef<HTMLDivElement>(null)
+    const [pos, setPos] = useState({ top: 0, left: 0, width: 0 })
+    const buttonRef = useRef<HTMLButtonElement>(null)
+    const dropdownRef = useRef<HTMLDivElement>(null)
 
     const facetedValues = column.getFacetedUniqueValues()
     const selectedValues = new Set((column.getFilterValue() as string[]) ?? [])
@@ -25,7 +28,10 @@ function FacetedFilter({ column }: { readonly column: Column<LogItem, unknown> }
 
     useEffect(() => {
         function handleClickOutside(e: MouseEvent) {
-            if (ref.current && !ref.current.contains(e.target as Node)) {
+            if (
+                dropdownRef.current && !dropdownRef.current.contains(e.target as Node) &&
+                buttonRef.current && !buttonRef.current.contains(e.target as Node)
+            ) {
                 setOpen(false)
             }
         }
@@ -40,11 +46,20 @@ function FacetedFilter({ column }: { readonly column: Column<LogItem, unknown> }
         column.setFilterValue(next.size ? [...next] : undefined)
     }
 
+    const handleOpen = () => {
+        if (buttonRef.current) {
+            const rect = buttonRef.current.getBoundingClientRect()
+            setPos({ top: rect.bottom + 4, left: rect.left, width: Math.max(rect.width, 150) })
+        }
+        setOpen(o => !o)
+    }
+
     return (
-        <div className="relative" ref={ref}>
+        <div>
             <button
+                ref={buttonRef}
                 className="w-full flex items-center justify-between gap-1 rounded px-2 py-1 text-xs font-normal text-slate-800 bg-white border border-slate-300 hover:bg-slate-50 focus:outline-none focus:ring-1 focus:ring-sky-400"
-                onClick={() => setOpen(o => !o)}
+                onClick={handleOpen}
             >
                 <span className="text-slate-400">
                     {selectedValues.size > 0 ? `${selectedValues.size} selected` : 'Filter…'}
@@ -56,8 +71,12 @@ function FacetedFilter({ column }: { readonly column: Column<LogItem, unknown> }
                 )}
             </button>
 
-            {open && (
-                <div className="absolute top-full left-0 z-50 mt-1 min-w-[150px] bg-white border border-slate-200 rounded-lg shadow-lg py-1">
+            {open && createPortal(
+                <div
+                    ref={dropdownRef}
+                    style={{ position: 'fixed', top: pos.top, left: pos.left, minWidth: pos.width }}
+                    className="z-[9999] bg-white border border-slate-200 rounded-lg shadow-lg py-1"
+                >
                     {options.map(([value, count]) => {
                         const strVal = String(value)
                         const checked = selectedValues.has(strVal)
@@ -85,7 +104,8 @@ function FacetedFilter({ column }: { readonly column: Column<LogItem, unknown> }
                             Clear
                         </button>
                     )}
-                </div>
+                </div>,
+                document.body
             )}
         </div>
     )

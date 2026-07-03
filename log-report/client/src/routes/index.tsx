@@ -1,6 +1,6 @@
 import LogReport from '#/components/Log/LogReport'
 import { createFileRoute } from '@tanstack/react-router'
-import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 export const Route = createFileRoute('/')({ component: Home })
 
@@ -16,6 +16,5 @@ function Home() {
         <LogReport />
       </div>
     </QueryClientProvider>
-
   )
 }

@@ -8,16 +8,33 @@ services:
     container_name: log_report
     restart: always
     environment:
-      DB_HOST: log_postgres
+      DB_HOST: ${DB_HOST}
       DB_PORT: 5432
-      DB_USER: ${POSTGRES_USER}
-      DB_PASSWORD: ${POSTGRES_PASSWORD}
-      DB_NAME: ${POSTGRES_DB}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+    # or:
+    # env_file:
+    #   - ./server/.env
     ports:
       - "${SERVER_PORT:-8000}:8000"
-    # Start log-agent's DB stack first: cd ../log-agent && docker compose -f docker-compose.db.yml up -d
+    # Start log-agent's DB stack first: cd ../log-report && docker compose -f docker-compose.db.yml up -d
     networks:
       - logging-network
+  # log-report-client:
+  #   build:
+  #     context: ./client
+  #     dockerfile: Dockerfile
+  #   container_name: log_report_client
+  #   restart: always
+  #   environment:
+  #     VITE_API_URL: http://log_report:8000
+  #   ports:
+  #     - "${CLIENT_PORT:-3000}:3000"
+  #   depends_on:
+  #     - log-report
+  #   networks:
+  #     - logging-network
 
 networks:
   logging-network:

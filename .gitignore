@@ -6,14 +6,15 @@
 agent
 
 # macOS
-.DS_Store
+**/.DS_Store
 
-# Test fixtures
+# Logs
 **/*.log
 
+# Go agent state
 file-offsets.json
 
-# log-report
+# log-report server (Python)
 log-report/server/.venv/
 log-report/server/__pycache__/
 log-report/server/**/__pycache__/
@@ -23,8 +24,7 @@ log-report/server/.pytest_cache/
 log-report/server/.mypy_cache/
 log-report/server/.ruff_cache/
 
-# test http
-*.http
-# .venv
-.venv/
-# pyproject.toml
+# log-report client (Node)
+log-report/client/node_modules/
+log-report/client/dist/
+log-report/client/*.tsbuildinfo

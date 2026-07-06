@@ -21,20 +21,23 @@ services:
     # Start log-agent's DB stack first: cd ../log-report && docker compose -f docker-compose.db.yml up -d
     networks:
       - logging-network
-  # log-report-client:
-  #   build:
-  #     context: ./client
-  #     dockerfile: Dockerfile
-  #   container_name: log_report_client
-  #   restart: always
-  #   environment:
-  #     VITE_API_URL: http://log_report:8000
-  #   ports:
-  #     - "${CLIENT_PORT:-3000}:3000"
-  #   depends_on:
-  #     - log-report
-  #   networks:
-  #     - logging-network
+  log-report-client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: log_report_client
+    restart: always
+    ports:
+      - "${CLIENT_PORT:-3000}:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - HOST=0.0.0.0
+      - VITE_API_URL=${VITE_API_URL}
+    depends_on:
+      - log-report
+    networks:
+      - logging-network
 
 networks:
   logging-network:

@@ -25,15 +25,16 @@ services:
     build:
       context: ./client
       dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL}
     container_name: log_report_client
     restart: always
     ports:
       - "${CLIENT_PORT:-3000}:3000"
     environment:
-      - NODE_ENV=production
-      - PORT=3000
-      - HOST=0.0.0.0
-      - VITE_API_URL=${VITE_API_URL}
+      NODE_ENV: production
+      PORT: 3000
+      HOST: 0.0.0.0
     depends_on:
       - log-report
     networks:

@@ -1,9 +1,16 @@
 tls:
   certificates:
+    # Cloudflare Origin Certificate — covers log-report.hthai.cloud
+    # Download from: Cloudflare Dashboard → SSL/TLS → Origin Server → Create Certificate
+    # Save as: traefik/certs/origin-cert.pem + traefik/certs/origin-key.pem
+    - certFile: /certs/origin-cert.pem
+      keyFile:  /certs/origin-key.pem
+    # mkcert cert — covers *.localhost for local dev
     - certFile: /certs/cert.pem
-      keyFile: /certs/key.pem
+      keyFile:  /certs/key.pem
   stores:
     default:
+      # Fallback cert when no SNI match — serves the local mkcert cert
       defaultCertificate:
         certFile: /certs/cert.pem
-        keyFile: /certs/key.pem
+        keyFile:  /certs/key.pem

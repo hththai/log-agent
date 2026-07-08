@@ -1,0 +1,4 @@
+.env
+letsencrypt/
+traefik/certs/*.pem
+traefik/certs/*.key

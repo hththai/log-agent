@@ -24,7 +24,7 @@ export interface ServiceCount {
 }
 
 export async function getLogs(): Promise<LogsResponse> {
-    const res = await fetch(`${import.meta.env.VITE_API_URL}/logs?page_size=10000`)
+    const res = await fetch(`/api/logs?page_size=10000`)
 
     if (!res.ok) throw new Error("Failed to fetch logs")
 

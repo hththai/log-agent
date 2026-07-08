@@ -90,8 +90,8 @@ RUN npm install -g npm@11.18.0 && npm ci
 # Build application
 FROM deps AS builder
 
-ARG VITE_API_URL
-ENV VITE_API_URL=$VITE_API_URL
+ARG INTERNAL_API_URL=http://log_report:8000
+ENV INTERNAL_API_URL=$INTERNAL_API_URL
 
 COPY . .
 RUN npm run build

@@ -5,8 +5,10 @@ services:
     image: traefik:v3.0
     container_name: traefik-report
     restart: always
+    profiles: [traefik]
     command:
       - "--api.dashboard=true"
+      - "--ping=true"
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
       # File provider — hot-reloads TLS certs from /dynamic without restart
@@ -14,6 +16,12 @@ services:
       - "--providers.file.watch=true"
       - "--entrypoints.web.address=:80"
       - "--entrypoints.websecure.address=:443"
+    healthcheck:
+      test: ["CMD", "traefik", "healthcheck", "--ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
     ports:
       - "80:80"
       - "443:443"
@@ -65,7 +73,11 @@ services:
       PORT: 3000
       HOST: 0.0.0.0
     depends_on:
-      - log-report
+      log-report:
+        condition: service_started
+      traefik:
+        condition: service_healthy
+        required: false
     labels:
       - "traefik.enable=true"
       # Backend — plain HTTP; TLS terminates at Traefik (Cloudflare Full strict handles the rest)

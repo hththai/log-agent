@@ -4,7 +4,7 @@ from typing import Annotated, Optional
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-from app.config import ALLOWED_TABLES
+from app.config import is_safe_table_name
 from app.database import get_pool
 from app.models.log import LogEntry, LogFilter, LogsResponse
 from app.repositories.log import LogRepository
@@ -16,8 +16,11 @@ def get_repo(pool: Annotated[asyncpg.Pool, Depends(get_pool)]) -> LogRepository:
     return LogRepository(pool)
 
 
-def validate_table(table: str) -> str:
-    if table not in ALLOWED_TABLES:
+async def validate_table(
+    table: str,
+    repo: Annotated[LogRepository, Depends(get_repo)],
+) -> str:
+    if not is_safe_table_name(table) or not await repo.table_exists(table):
         raise HTTPException(status_code=404, detail=f"Table '{table}' not found")
     return table
 
@@ -77,10 +80,10 @@ async def get_logs(
     items = await repo.list(table, filters, page, page_size)
     return LogsResponse(table=table, total=total, page=page, page_size=page_size, items=items)
 
-#count total items by table
+
 @router.get("/{table}/count")
 async def get_logs_count(
     table: Annotated[str, Depends(validate_table)],
-    repo: Annotated[LogRepository, Depends(get_repo)]
+    repo: Annotated[LogRepository, Depends(get_repo)],
 ) -> int:
     return await repo.count(table)

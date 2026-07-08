@@ -2,14 +2,12 @@ from __future__ import annotations
 
 import asyncpg
 
-from app.config import ALLOWED_TABLES
 from app.models.log import LogEntry, LogFilter
 
-
-def _build_union() -> str:
-    cols = "id, log_time, level, ip::text AS ip, method, path, status, duration_ms::float AS duration_ms, name_service"
-    parts = [f"SELECT {cols} FROM {t}" for t in ALLOWED_TABLES]
-    return " UNION ALL ".join(parts)
+_LOG_COLS = (
+    "id, log_time, level, ip::text AS ip, method, path, status,"
+    " duration_ms::float AS duration_ms, name_service"
+)
 
 
 class LogRepository:
@@ -49,8 +47,17 @@ class LogRepository:
         )
         return [r["table_name"] for r in rows]
 
+    async def table_exists(self, table: str) -> bool:
+        val = await self._pool.fetchval(
+            """
+            SELECT 1 FROM information_schema.tables
+            WHERE table_schema = 'public' AND table_name = $1
+            """,
+            table,
+        )
+        return val is not None
+
     async def count(self, table: str, filters: LogFilter | None = None) -> int:
-        # table is pre-validated against ALLOWED_TABLES before reaching here
         if filters is None:
             return await self._pool.fetchval(f"SELECT COUNT(*) FROM {table}")
         where, params = self._where(filters)
@@ -67,7 +74,6 @@ class LogRepository:
     ) -> list[LogEntry]:
         where, params = self._where(filters)
         offset = (page - 1) * page_size
-        # table is pre-validated against ALLOWED_TABLES before reaching here
         rows = await self._pool.fetch(
             f"""
             SELECT id, log_time, level, ip::text, method, path, status,
@@ -81,9 +87,14 @@ class LogRepository:
         return [LogEntry(**dict(r)) for r in rows]
 
     async def count_all(self, filters: LogFilter | None = None) -> int:
-        union = _build_union()
+        tables = await self.list_tables()
+        if not tables:
+            return 0
+        union = " UNION ALL ".join(f"SELECT {_LOG_COLS} FROM {t}" for t in tables)
         if filters is None:
-            return await self._pool.fetchval(f"SELECT COUNT(*) FROM ({union}) AS all_logs")
+            return await self._pool.fetchval(
+                f"SELECT COUNT(*) FROM ({union}) AS all_logs"
+            )
         where, params = self._where(filters)
         return await self._pool.fetchval(
             f"SELECT COUNT(*) FROM ({union}) AS all_logs {where}", *params
@@ -95,7 +106,10 @@ class LogRepository:
         page: int,
         page_size: int,
     ) -> list[LogEntry]:
-        union = _build_union()
+        tables = await self.list_tables()
+        if not tables:
+            return []
+        union = " UNION ALL ".join(f"SELECT {_LOG_COLS} FROM {t}" for t in tables)
         where, params = self._where(filters)
         offset = (page - 1) * page_size
         rows = await self._pool.fetch(

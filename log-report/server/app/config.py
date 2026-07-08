@@ -1,3 +1,5 @@
+import re
+
 from pydantic_settings import BaseSettings
 
 
@@ -17,9 +19,8 @@ class Settings(BaseSettings):
 
 settings = Settings()
 
-# Business constant — not runtime config, not user-tunable
-ALLOWED_TABLES: frozenset[str] = frozenset({
-    "logs_ocr_api",
-    "logs_ocr_client",
-    "logs_doc_invoice",
-})
+_TABLE_RE = re.compile(r"^logs_[a-z0-9_]+$")
+
+
+def is_safe_table_name(name: str) -> bool:
+    return bool(_TABLE_RE.match(name))

@@ -6,6 +6,8 @@ import { useQuery } from '@tanstack/react-query'
 
 import { getLogs } from '@/api/log'
 import type { ServiceCount, LogsResponse } from '@/api/log'
+import { LogIpReport } from './LogIpReport'
+import { LogNetworkGraph } from './LogNetworkGraph'
 
 export function LogReport() {
     const [selectedService, setSelectedService] = useState<string | null>(null)
@@ -33,6 +35,8 @@ export function LogReport() {
             <LogInfoBar totalRequests={totalRequests} servicesCount={services.length} ipCount={noIp.length} />
             <LogTable data={data.items} serviceFilter={selectedService} />
             <LogPie data={serviceCount} name={"Services Type Portion"} onSliceClick={setSelectedService} />
+            <LogIpReport data={data.items} />
+            <LogNetworkGraph data={data.items} />
         </div>
     )
 

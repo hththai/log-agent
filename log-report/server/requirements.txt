@@ -3,3 +3,16 @@ uvicorn[standard]>=0.30
 asyncpg>=0.29
 pydantic>=2.7
 pydantic-settings>=2.3
+
+# Test framework (T001) — justification: no backend test framework existed
+# prior to the SSO configuration feature, and the plan requires focused
+# backend/route-level validation.
+pytest>=8.0
+pytest-asyncio>=0.24
+httpx>=0.27
+
+# OIDC client (Foundational) — justification: the SSO feature requires a
+# real OIDC authorization-code handshake and ID-token/JWKS verification;
+# Authlib is the standard, actively maintained library for this in the
+# Starlette/FastAPI ecosystem rather than hand-rolling token verification.
+authlib>=1.3

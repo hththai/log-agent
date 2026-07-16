@@ -3,3 +3,4 @@ letsencrypt/
 traefik/certs/*.pem
 traefik/certs/*.key
 traefik/certs/internal/
+.claude/ 

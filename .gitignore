@@ -24,6 +24,9 @@ log-report/server/.pytest_cache/
 log-report/server/.mypy_cache/
 log-report/server/.ruff_cache/
 
+# log-report SSO config store (admin-entered, may contain secrets — never commit)
+log-report/server/app/data/*.json
+
 # log-report client (Node)
 log-report/client/node_modules/
 log-report/client/dist/

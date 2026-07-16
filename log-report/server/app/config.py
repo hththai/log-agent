@@ -12,6 +12,11 @@ class Settings(BaseSettings):
 
     cors_origins: list[str] = ["http://localhost:3000", "http://127.0.0.1:3000"]
 
+    # SSO configuration (feature 003)
+    sso_client_secret: str = ""
+    sso_config_path: str = "app/data/sso_config.json"
+    admin_api_token: str = ""
+
     class Config:
         env_file = ".env"
         extra = "ignore"

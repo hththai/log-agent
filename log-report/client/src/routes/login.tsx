@@ -11,6 +11,7 @@ function LoginPage() {
     const { isAuthenticated, loginWithSso } = useAuth()
     const [email, setEmail] = useState('')
     const [error, setError] = useState('')
+    const [isSubmitting, setIsSubmitting] = useState(false)
 
     useEffect(() => {
         if (isAuthenticated) {
@@ -18,7 +19,7 @@ function LoginPage() {
         }
     }, [isAuthenticated, router])
 
-    const handleSubmit: FormEventHandler<HTMLFormElement> = (event) => {
+    const handleSubmit: FormEventHandler<HTMLFormElement> = async (event) => {
         event.preventDefault()
 
         const trimmedEmail = email.trim()
@@ -27,8 +28,16 @@ function LoginPage() {
             return
         }
 
-        loginWithSso(trimmedEmail)
-        router.navigate({ to: '/' })
+        setError('')
+        setIsSubmitting(true)
+        const result = await loginWithSso(trimmedEmail)
+        setIsSubmitting(false)
+
+        if (result.granted) {
+            router.navigate({ to: '/' })
+        } else {
+            setError(result.reason ?? 'Access denied.')
+        }
     }
 
     return (
@@ -62,10 +71,11 @@ function LoginPage() {
                     {error ? <p className="text-sm text-rose-600">{error}</p> : null}
 
                     <button
-                        className="w-full rounded-lg bg-cyan-600 px-4 py-2 font-medium text-white transition hover:bg-cyan-700"
+                        className="w-full rounded-lg bg-cyan-600 px-4 py-2 font-medium text-white transition hover:bg-cyan-700 disabled:cursor-not-allowed disabled:opacity-60"
+                        disabled={isSubmitting}
                         type="submit"
                     >
-                        Continue to dashboard
+                        {isSubmitting ? 'Signing in…' : 'Continue to dashboard'}
                     </button>
                 </form>
             </div>

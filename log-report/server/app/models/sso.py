@@ -89,3 +89,14 @@ class SSOConfigResponse(BaseModel):
 class SSOValidateResponse(BaseModel):
     ready: bool
     reasons: list[str] = Field(default_factory=list)
+
+
+class SSOLoginRequest(BaseModel):
+    email: str
+
+
+class SSOLoginResponse(BaseModel):
+    granted: bool
+    role: str | None = None
+    email: str | None = None
+    reason: str | None = None

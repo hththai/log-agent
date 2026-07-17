@@ -3,12 +3,18 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.models.sso import (
+    AccessMapping,
+    AccessMappingInput,
     DemoModeConfig,
     SSOConfigResponse,
+    SSOLoginRequest,
+    SSOLoginResponse,
     SSOProviderConfigInput,
     SSOValidateResponse,
+    UserIdentity,
 )
 from app.security import require_admin
+from app.services.access_evaluator import evaluate_access
 from app.services.oidc_client import fetch_server_metadata
 from app.services.sso_store import SsoConfigStore, get_sso_store
 
@@ -71,3 +77,60 @@ async def validate_config(store: Annotated[SsoConfigStore, Depends(get_sso_store
         reasons.append(f"Could not reach the issuer's OIDC discovery document at {provider.issuer}")
 
     return SSOValidateResponse(ready=not reasons, reasons=reasons)
+
+
+@router.get("/mappings", response_model=list[AccessMapping])
+async def get_mappings(store: Annotated[SsoConfigStore, Depends(get_sso_store)]):
+    """Public — needed for the sign-in evaluation path to be inspectable."""
+    return store.list_mappings()
+
+
+@router.post("/mappings", response_model=AccessMapping, dependencies=[Depends(require_admin)])
+async def save_mapping(
+    payload: AccessMappingInput,
+    store: Annotated[SsoConfigStore, Depends(get_sso_store)],
+):
+    if not payload.claim_name or not payload.expected_value or not payload.role:
+        raise HTTPException(
+            status_code=422,
+            detail="claim_name, expected_value, and role are required",
+        )
+    return store.save_mapping(payload)
+
+
+@router.post("/login", response_model=SSOLoginResponse)
+async def login(
+    payload: SSOLoginRequest,
+    store: Annotated[SsoConfigStore, Depends(get_sso_store)],
+):
+    """No admin auth — this is the end-user sign-in path.
+
+    The full OIDC authorize-redirect/callback/token-exchange handshake is
+    out of scope for this pass (deferred, per tasks.md); the identity is
+    resolved directly from the submitted email, covering both a real
+    provider's post-redirect identity and the demo-mode fallback (FR-007)
+    with the same evaluation path.
+    """
+    email = payload.email.strip()
+    if not email:
+        return SSOLoginResponse(granted=False, reason="Email is required to sign in")
+
+    provider = store.get_provider_config()
+    demo = store.get_demo_mode()
+
+    if provider is not None and provider.enabled:
+        provider_id = provider.id
+    elif demo.enabled:
+        provider_id = "demo"
+    else:
+        return SSOLoginResponse(granted=False, reason="SSO provider is not configured or enabled")
+
+    identity = UserIdentity(provider_id=provider_id, subject=email, email=email)
+    policy = evaluate_access(identity, store.list_mappings())
+
+    return SSOLoginResponse(
+        granted=policy.allow,
+        role=policy.role if policy.allow else None,
+        email=email,
+        reason=None if policy.allow else policy.description,
+    )

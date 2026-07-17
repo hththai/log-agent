@@ -1,7 +1,6 @@
 from app.models.sso import AccessMappingInput, DemoModeConfig, SSOProviderConfigInput
 from app.services.sso_store import SsoConfigStore
 
-
 def make_store(tmp_path):
     return SsoConfigStore(path=tmp_path / "sso_config.json")
 

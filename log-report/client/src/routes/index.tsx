@@ -10,15 +10,16 @@ const queryClient = new QueryClient()
 
 function Home() {
   const router = useRouter()
-  const { isAuthenticated, logout } = useAuth()
+  const { isAuthenticated, logout, user } = useAuth()
+  const hasAccess = isAuthenticated && Boolean(user?.role)
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!hasAccess) {
       router.navigate({ to: '/login' })
     }
-  }, [isAuthenticated, router])
+  }, [hasAccess, router])
 
-  if (!isAuthenticated) {
+  if (!hasAccess) {
     return null
   }
 

@@ -101,19 +101,19 @@ description: "Task list for Flexible Secure SSO Configuration"
 
 ### Tests for User Story 2
 
-- [ ] T022 [P] [US2] Unit test for access-mapping evaluation (claim match → role/allow, no match → deny, missing attribute → deny) in `server/tests/test_sso_mapping_evaluation.py`
-- [ ] T023 [P] [US2] Contract test for `POST /sso/login` covering allowed, denied, and missing-attribute identities in `server/tests/test_sso_login_api.py`
+- [X] T022 [P] [US2] Unit test for access-mapping evaluation (claim match → role/allow, no match → deny, missing attribute → deny) in `server/tests/test_sso_mapping_evaluation.py`
+- [X] T023 [P] [US2] Contract test for `POST /sso/login` covering allowed, denied, and missing-attribute identities in `server/tests/test_sso_login_api.py`
 
 ### Implementation for User Story 2
 
-- [ ] T024 [P] [US2] Implement `GET /sso/mappings` (no auth — needed for the sign-in evaluation path to be inspectable) and `POST /sso/mappings` (**protected by `Depends(require_admin)`**) in `server/app/routers/sso.py`, backed by `SsoConfigStore` (list/create/update `AccessMapping`) (depends on T006, T007, T010)
-- [ ] T025 [P] [US2] Implement `evaluate_access(identity, mappings) -> AccessPolicy` in `server/app/services/access_evaluator.py`, denying by default when no mapping matches (FR-005, SC-003) (depends on T004)
-- [ ] T026 [US2] Implement `POST /sso/login` in `server/app/routers/sso.py` (no admin auth — this is the end-user sign-in path): confirm the provider is configured and enabled, resolve a `UserIdentity` (SSO or demo-mode per FR-007), evaluate mappings via T025, and return the granted role or a denial reason (depends on T024, T025)
-- [ ] T027 [US2] Handle the "missing required claim attribute" edge case in `evaluate_access` by denying with a specific reason code (depends on T025)
-- [ ] T028 [US2] Extend `AuthProvider` in `client/src/auth/AuthProvider.tsx` to call `login()` from `client/src/api/sso.tsx`, store the granted role, and expose a denial message instead of always succeeding (depends on T008, T026)
-- [ ] T029 [P] [US2] Update `client/src/routes/login.tsx` to submit through the new `AuthProvider` sign-in flow and display the server's denial message when access is blocked (depends on T028)
-- [ ] T030 [P] [US2] Gate `client/src/routes/dashboard.tsx` and `client/src/routes/index.tsx` on the mapped role/allow result, not just `isAuthenticated` (depends on T028)
-- [ ] T031 [P] [US2] Update `client/src/auth/AuthProvider.test.tsx` to cover the denied-identity path (signed-out state with an error message) (depends on T028)
+- [X] T024 [P] [US2] Implement `GET /sso/mappings` (no auth — needed for the sign-in evaluation path to be inspectable) and `POST /sso/mappings` (**protected by `Depends(require_admin)`**) in `server/app/routers/sso.py`, backed by `SsoConfigStore` (list/create/update `AccessMapping`) (depends on T006, T007, T010)
+- [X] T025 [P] [US2] Implement `evaluate_access(identity, mappings) -> AccessPolicy` in `server/app/services/access_evaluator.py`, denying by default when no mapping matches (FR-005, SC-003) (depends on T004)
+- [X] T026 [US2] Implement `POST /sso/login` in `server/app/routers/sso.py` (no admin auth — this is the end-user sign-in path): confirm the provider is configured and enabled, resolve a `UserIdentity` (SSO or demo-mode per FR-007), evaluate mappings via T025, and return the granted role or a denial reason (depends on T024, T025)
+- [X] T027 [US2] Handle the "missing required claim attribute" edge case in `evaluate_access` by denying with a specific reason code (depends on T025)
+- [X] T028 [US2] Extend `AuthProvider` in `client/src/auth/AuthProvider.tsx` to call `login()` from `client/src/api/sso.tsx`, store the granted role, and expose a denial message instead of always succeeding (depends on T008, T026)
+- [X] T029 [P] [US2] Update `client/src/routes/login.tsx` to submit through the new `AuthProvider` sign-in flow and display the server's denial message when access is blocked (depends on T028)
+- [X] T030 [P] [US2] Gate `client/src/routes/dashboard.tsx` and `client/src/routes/index.tsx` on the mapped role/allow result, not just `isAuthenticated` (depends on T028)
+- [X] T031 [P] [US2] Update `client/src/auth/AuthProvider.test.tsx` to cover the denied-identity path (signed-out state with an error message) (depends on T028)
 
 **Checkpoint**: User Stories 1 and 2 both work independently — configuration and mapped sign-in are complete end to end.
 

@@ -6,15 +6,23 @@ import {
     useState,
     type ReactNode,
 } from 'react'
+import { login as loginRequest } from '#/api/sso'
 
 export interface AuthUser {
     email: string
+    role?: string
+}
+
+export interface LoginOutcome {
+    granted: boolean
+    reason?: string
 }
 
 interface AuthContextValue {
     user: AuthUser | null
     isAuthenticated: boolean
-    loginWithSso: (email: string) => void
+    loginError: string | null
+    loginWithSso: (email: string) => Promise<LoginOutcome>
     logout: () => void
 }
 
@@ -42,6 +50,7 @@ function getStoredSession(): AuthUser | null {
 
 export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     const [user, setUser] = useState<AuthUser | null>(() => getStoredSession())
+    const [loginError, setLoginError] = useState<string | null>(null)
 
     useEffect(() => {
         if (typeof window === 'undefined') {
@@ -55,27 +64,48 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
         }
     }, [user])
 
-    const loginWithSso = (email: string) => {
+    const loginWithSso = async (email: string): Promise<LoginOutcome> => {
         const trimmedEmail = email.trim()
         if (!trimmedEmail) {
-            return
+            const reason = 'Please enter your email address.'
+            setLoginError(reason)
+            return { granted: false, reason }
         }
 
-        setUser({ email: trimmedEmail })
+        try {
+            const result = await loginRequest(trimmedEmail)
+            if (!result.granted) {
+                const reason = result.reason ?? 'Access denied for this identity.'
+                setUser(null)
+                setLoginError(reason)
+                return { granted: false, reason }
+            }
+
+            setUser({ email: result.email ?? trimmedEmail, role: result.role })
+            setLoginError(null)
+            return { granted: true }
+        } catch (err) {
+            const reason = err instanceof Error ? err.message : 'Sign-in failed.'
+            setUser(null)
+            setLoginError(reason)
+            return { granted: false, reason }
+        }
     }
 
     const logout = () => {
         setUser(null)
+        setLoginError(null)
     }
 
     const value = useMemo<AuthContextValue>(
         () => ({
             user,
             isAuthenticated: Boolean(user),
+            loginError,
             loginWithSso,
             logout,
         }),
-        [user],
+        [user, loginError],
     )
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

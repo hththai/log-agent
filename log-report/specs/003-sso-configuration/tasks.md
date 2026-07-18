@@ -14,6 +14,8 @@ description: "Task list for Flexible Secure SSO Configuration"
 **Organization**: Tasks are grouped by user story (US1, US2, US3 from spec.md) to enable independent implementation and testing of each story.
 
 > **Revision note (post `/speckit-analyze`)**: Finding **G1** (CRITICAL) identified that no task protected the `/sso/*` write endpoints, violating FR-003's "restricted access to sensitive settings" and undermining SC-003. T010 (new) and its wiring into T014/T015/T019 fix this. Task IDs T010 onward were renumbered (+1) to make room; T021 (new) was also added to close the C2 gap (no test for the new `SsoConfigForm` component) for the story being implemented now.
+>
+> **Revision note (post `/speckit-clarify` + `/speckit-plan`, 2026-07-18)**: Clarification established that User Story 2's production sign-in path MUST be a real redirect-based OAuth flow with verified-token evaluation (FR-009/FR-010/FR-011), distinct from the demo-mode email entry already built at T026 — closing the **U2** gap noted below. T032 (new) through T041 (new) add this: a session mechanism (Starlette `SessionMiddleware`, backed by the new `itsdangerous` dependency — see research.md), the `/sso/authorize` and `/sso/callback` endpoints, `/sso/session` + `/sso/logout`, and the corresponding client changes. Task IDs previously numbered T032–T042 (User Story 3 and Polish) are renumbered T042–T052 (+10) to make room.
 
 ## Format: `[ID] [P?] [Story] Description`
 
@@ -115,7 +117,23 @@ description: "Task list for Flexible Secure SSO Configuration"
 - [X] T030 [P] [US2] Gate `client/src/routes/dashboard.tsx` and `client/src/routes/index.tsx` on the mapped role/allow result, not just `isAuthenticated` (depends on T028)
 - [X] T031 [P] [US2] Update `client/src/auth/AuthProvider.test.tsx` to cover the denied-identity path (signed-out state with an error message) (depends on T028)
 
-**Checkpoint**: User Stories 1 and 2 both work independently — configuration and mapped sign-in are complete end to end.
+### Tests for User Story 2 (continued — production sign-in flow, FR-009/FR-010/FR-011)
+
+- [ ] T032 [P] [US2] Contract test for `GET /sso/authorize`, `GET /sso/callback`, `GET /sso/session`, and `POST /sso/logout` in `server/tests/test_sso_callback_api.py`, mocking Authlib's `authorize_access_token` rather than a live IdP (per plan.md's testing note): a granted identity sets a session and redirects to the landing route; a denied/missing-attribute identity redirects to `/login?error=...` with no session created; a simulated consent-denial/callback exception redirects to `/login?error=...` with no session; `GET /sso/session` reflects an active session (and `granted: false` when none exists); `POST /sso/logout` clears it
+
+### Implementation for User Story 2 (continued — production sign-in flow)
+
+- [ ] T033 [P] [US2] Add `itsdangerous` to `server/requirements.txt` (justification: hard transitive requirement of Starlette's `SessionMiddleware`, itself required by Authlib's Starlette OAuth client for `state`/`nonce` storage during the redirect round trip — see research.md)
+- [ ] T034 [US2] Add `session_secret_key: str = ""` to `Settings` in `server/app/config.py`, document `SESSION_SECRET_KEY` in `server/.env.example`, and register `starlette.middleware.sessions.SessionMiddleware(app, secret_key=settings.session_secret_key)` in `server/app/main.py` (depends on T033)
+- [ ] T035 [US2] Implement `GET /sso/authorize` in `server/app/routers/sso.py`: build the OAuth client via `build_oauth_client` (T010b) from the stored provider config and call `await client.authorize_redirect(request, provider.redirect_uri)`; return 503 if no provider is configured/enabled (depends on T034, T010b, T032)
+- [ ] T036 [US2] Implement `GET /sso/callback` in `server/app/routers/sso.py` at the provider's configured redirect path: call `await client.authorize_access_token(request)` (exchanges the code and verifies the ID token's signature/issuer/audience/nonce via Authlib), resolve a `UserIdentity` from its claims, evaluate mappings via `evaluate_access` (T025); on grant write `{email, role, provider_id}` to `request.session` and redirect (302) to the SPA's single landing route (FR-011); on denial, missing-attribute, or any Authlib exception (including consent denial at the provider) redirect (302) to `/login?error=<message>` without creating a session (FR-010) (depends on T035, T025, T032)
+- [ ] T037 [US2] Implement `GET /sso/session` (reads `request.session`, returns the same granted/role/email shape as `POST /sso/login`'s response) and `POST /sso/logout` (clears `request.session`, idempotent) in `server/app/routers/sso.py` (depends on T034, T032)
+- [ ] T038 [US2] Add `authorizeUrl()`, `getSession()`, and `logout()` to `client/src/api/sso.tsx`, each `fetch`ing with `credentials: 'include'` so the session cookie flows cross-origin (depends on T008)
+- [ ] T039 [US2] Add a "Sign in with `<Provider>`" link in `client/src/routes/login.tsx` pointing at `authorizeUrl()` (a plain navigation, not a `fetch` call), read an `?error=` search param to show the callback's denial message (FR-010), and relabel the existing email field as the demo-mode-only fallback (depends on T038)
+- [ ] T040 [US2] Have `AuthProvider` in `client/src/auth/AuthProvider.tsx` call `getSession()` on mount to restore auth state from the server-verified session cookie instead of trusting `localStorage` alone (`localStorage` becomes a paint-avoidance hint only), and have `logout()` also call the new session-clearing API (depends on T038)
+- [ ] T041 [P] [US2] Update `client/src/auth/AuthProvider.test.tsx` to cover session restore on mount, mocking `getSession` (depends on T040)
+
+**Checkpoint**: User Stories 1 and 2 both work independently — configuration, the real provider redirect sign-in with verified-token evaluation, and the demo-mode fallback are all complete end to end.
 
 ---
 
@@ -127,16 +145,16 @@ description: "Task list for Flexible Secure SSO Configuration"
 
 ### Tests for User Story 3
 
-- [ ] T032 [P] [US3] Contract test for disabled-provider login rejection and mapping edit/removal effects (including an unauthenticated `DELETE /sso/mappings/{id}` returning 401) in `server/tests/test_sso_governance_api.py`
+- [ ] T042 [P] [US3] Contract test for disabled-provider login rejection and mapping edit/removal effects (including an unauthenticated `DELETE /sso/mappings/{id}` returning 401) in `server/tests/test_sso_governance_api.py`
 
 ### Implementation for User Story 3
 
-- [ ] T033 [US3] Enforce the `enabled` flag on `SSOProviderConfig` in `POST /sso/login`, returning a clear "provider unavailable" denial when disabled (FR-004) (depends on T026)
-- [ ] T034 [US3] Add mapping removal (`DELETE /sso/mappings/{id}`, **protected by `Depends(require_admin)`**) in `server/app/routers/sso.py`, wired to `deleteMapping` in `client/src/api/sso.tsx` (depends on T024, T010)
-- [ ] T035 [US3] Add structured sign-in/access-control audit logging (timestamp, provider, subject/email, decision, reason — never the secret or the admin token) via Python's `logging` module in `server/app/routers/sso.py` (FR-008) (depends on T026)
-- [ ] T036 [US3] Add an enable/disable toggle to `SsoConfigForm.tsx` and a mapping list/remove UI in `client/src/components/Admin/SsoMappingsPanel.tsx`, reusing the admin-token flow from T017, verified at mobile/tablet/desktop breakpoints (depends on T017, T034)
-- [ ] T037 [US3] Surface the "provider unavailable" denial message from T033 in `client/src/routes/login.tsx` (depends on T029, T033)
-- [ ] T038 [US3] Re-check provider/mapping state on the next authenticated request in `client/src/routes/index.tsx`, forcing logout if the provider was disabled or the user's mapping was removed mid-session (edge case: admin disables a provider while users are signed in) (depends on T030, T033)
+- [ ] T043 [US3] Enforce the `enabled` flag on `SSOProviderConfig` in `POST /sso/login`, returning a clear "provider unavailable" denial when disabled (FR-004) (depends on T026)
+- [ ] T044 [US3] Add mapping removal (`DELETE /sso/mappings/{id}`, **protected by `Depends(require_admin)`**) in `server/app/routers/sso.py`, wired to `deleteMapping` in `client/src/api/sso.tsx` (depends on T024, T010)
+- [ ] T045 [US3] Add structured sign-in/access-control audit logging (timestamp, provider, subject/email, decision, reason — never the secret or the admin token) via Python's `logging` module in `server/app/routers/sso.py` (FR-008) (depends on T026)
+- [ ] T046 [US3] Add an enable/disable toggle to `SsoConfigForm.tsx` and a mapping list/remove UI in `client/src/components/Admin/SsoMappingsPanel.tsx`, reusing the admin-token flow from T017, verified at mobile/tablet/desktop breakpoints (depends on T017, T044)
+- [ ] T047 [US3] Surface the "provider unavailable" denial message from T043 in `client/src/routes/login.tsx` (depends on T029, T043)
+- [ ] T048 [US3] Re-check provider/mapping state on the next authenticated request in `client/src/routes/index.tsx`, forcing logout if the provider was disabled or the user's mapping was removed mid-session (edge case: admin disables a provider while users are signed in) (depends on T030, T043)
 
 **Checkpoint**: All three user stories are independently functional; governance changes take effect for subsequent sign-ins without breaking US1/US2.
 
@@ -146,10 +164,10 @@ description: "Task list for Flexible Secure SSO Configuration"
 
 **Purpose**: Documentation, end-to-end validation, and a final security pass across all three stories.
 
-- [ ] T039 [P] Document `SSO_CLIENT_SECRET`, `ADMIN_API_TOKEN`, and the SSO endpoints in `server/README.md`
-- [ ] T040 [P] Review `server/app/routers/sso.py` and `server/app/services/*.py` for consistent error handling and response shapes across all endpoints, and confirm every write endpoint (`POST`/`DELETE`) carries `Depends(require_admin)`
-- [ ] T041 Run `quickstart.md` validation end to end (configure provider, update mapping, disable provider, exercise demo mode) and record results
-- [ ] T042 Security review: confirm `client_secret` and `admin_api_token` are never logged or returned in API responses, and `server/app/data/sso_config.json` is git-ignored (FR-003)
+- [ ] T049 [P] Document `SSO_CLIENT_SECRET`, `ADMIN_API_TOKEN`, `SESSION_SECRET_KEY`, and the SSO endpoints in `server/README.md`
+- [ ] T050 [P] Review `server/app/routers/sso.py` and `server/app/services/*.py` for consistent error handling and response shapes across all endpoints, and confirm every write endpoint (`POST`/`DELETE`) carries `Depends(require_admin)`
+- [ ] T051 Run `quickstart.md` validation end to end (production redirect sign-in including the callback-failure case, update mapping, disable provider, exercise demo mode) and record results
+- [ ] T052 Security review: confirm `client_secret`, `admin_api_token`, and `session_secret_key` are never logged or returned in API responses, and `server/app/data/sso_config.json` is git-ignored (FR-003)
 
 ---
 
@@ -163,6 +181,7 @@ description: "Task list for Flexible Secure SSO Configuration"
   - US1 and US2 are both P1 and have no dependency on each other's implementation, but US2's sign-in flow is only meaningful once a provider exists — implement US1 first for a coherent MVP demo.
   - US3 depends on US1's config UI (T017) and US2's login endpoint (T026) for the enable/disable and mapping-removal enforcement points; it is additive governance on top of US1+US2, not a separate vertical slice.
 - **Polish (Phase 6)**: Depends on all three user stories being complete.
+- **US2's production sign-in flow (T032–T041)**: Additive to the already-complete demo-mode sign-in (T022–T031); depends on T010b (Authlib client) and T025 (`evaluate_access`) from Foundational/earlier US2 work, not on US1 or US3.
 
 ### User Story Dependencies
 
@@ -172,7 +191,7 @@ description: "Task list for Flexible Secure SSO Configuration"
 
 ### Within Each User Story
 
-- Tests written first (T011/T012, T022/T023, T032), then implementation.
+- Tests written first (T011/T012 for US1; T022/T023 then T032 for US2's two waves; T042 for US3), then implementation.
 - Models/store before endpoints; endpoints before client UI.
 - Story complete and checkpointed before moving to the next priority.
 
@@ -181,7 +200,8 @@ description: "Task list for Flexible Secure SSO Configuration"
 - Setup: T003 can run alongside T001/T002.
 - Foundational: T004 and T005 run in parallel; then T006, T007, T008, T009 run in parallel (each touches a distinct file and depends only on T004/T005); T010 depends on T004+T009 so it runs after those two land.
 - US1: T011 and T012 run in parallel (different test files); T021 runs after T017/T019/T020 land.
-- US2: T022/T023 run in parallel; T024/T025 run in parallel; T029/T030/T031 run in parallel once T028 is done (different files, same single dependency).
+- US2 (demo-mode wave): T022/T023 run in parallel; T024/T025 run in parallel; T029/T030/T031 run in parallel once T028 is done (different files, same single dependency).
+- US2 (production sign-in wave): T032 (test) and T033 (dependency addition) run in parallel; T035/T036/T037 are sequential (all touch `server/app/routers/sso.py` and build on the session middleware from T034); T038 unblocks T039/T040 which can then run in parallel; T041 runs after T040.
 - Different user stories can be staffed in parallel once Foundational is done, per the dependency notes above.
 
 ---
@@ -201,6 +221,18 @@ Task: "Contract test (incl. 401 cases) for /sso/config and /sso/validate in serv
 Task: "Update client/src/routes/login.tsx to use the new sign-in flow"
 Task: "Gate client/src/routes/dashboard.tsx and index.tsx on mapped role/allow"
 Task: "Update client/src/auth/AuthProvider.test.tsx for the denied-identity path"
+```
+
+## Parallel Example: User Story 2 (production sign-in flow)
+
+```bash
+# T032 and T033 have no dependency on each other and can start together:
+Task: "Contract test for /sso/authorize, /sso/callback, /sso/session, /sso/logout in server/tests/test_sso_callback_api.py"
+Task: "Add itsdangerous to server/requirements.txt"
+
+# After T038 (client API additions) lands, these two are independent:
+Task: "Add the Sign in with <Provider> link and ?error= handling to login.tsx"
+Task: "Have AuthProvider call getSession() on mount to restore auth state"
 ```
 
 ---
@@ -232,4 +264,4 @@ Task: "Update client/src/auth/AuthProvider.test.tsx for the denied-identity path
 - Secrets (`client_secret`, `admin_api_token`) are sourced from env vars or a git-ignored local JSON file — never committed, never logged, never returned unredacted (FR-003).
 - No new database table is introduced (per plan.md) — SSO config/mappings persist to a local JSON file via `SsoConfigStore`.
 - Commit after each task or logical group; stop at any checkpoint to validate a story independently.
-- **Known deferred gaps from `/speckit-analyze`** (tracked for a future pass): U1 (no precedence rule when two mappings overlap), **U2 partially closed** — `POST /sso/validate` now does a live Authlib-backed OIDC discovery check (T010b/T015), but `POST /sso/login`'s full authorize-redirect/callback/token-exchange handshake is still unbuilt (US2/T026 scope), A1 (no measurable latency target), G2 (T032 should also cover a mapping *edit*, not just removal), I1 (contracts/sso-config-api.md doesn't yet document `DELETE /sso/mappings/{id}`).
+- **Known deferred gaps from `/speckit-analyze`** (tracked for a future pass): U1 (no precedence rule when two mappings overlap), **U2 now scoped** — `POST /sso/validate` already does a live Authlib-backed OIDC discovery check (T010b/T015); the full authorize-redirect/callback/token-exchange handshake has tasks assigned (T032–T037, post `/speckit-clarify`) but is not yet implemented, A1 (no measurable latency target), G2 (T042 should also cover a mapping *edit*, not just removal). ~~I1 (contracts/sso-config-api.md doesn't yet document `DELETE /sso/mappings/{id}`)~~ — resolved during the `/speckit-plan` pass that added the production sign-in flow.

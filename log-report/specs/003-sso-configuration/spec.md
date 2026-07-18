@@ -8,6 +8,14 @@
 
 **Input**: User description: "we are planning to use sso, please make sure that the configuration is flexible and secured to map and control"
 
+## Clarifications
+
+### Session 2026-07-18
+
+- Q: For User Story 2, should the production sign-in path be a real redirect-based OAuth flow (a "Sign in with <Provider>" button redirecting to the IdP, returning via the callback URL with a verified token) — distinct from the demo-mode email entry? → A: Yes — real IdP redirect with token verification is the production path; demo-mode email entry remains a separate, local-only fallback.
+- Q: When the user denies consent at the identity provider, or the OAuth callback returns an error/invalid state, what should happen? → A: Redirect back to `/login` with a clear error message.
+- Q: After a successful sign-in (real IdP or demo), should every granted role land on the same protected route, or should the destination depend on the granted role? → A: Single destination for all granted roles — role governs what a user can do there, not where they land.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Configure SSO access securely (Priority: P1)
@@ -35,8 +43,9 @@ A user signing in through SSO can access the appropriate dashboard or admin expe
 
 **Acceptance Scenarios**:
 
-1. **Given** a user has a valid SSO identity, **When** they sign in, **Then** the system recognizes the identity and grants access according to the configured mapping.
+1. **Given** a user has a valid SSO identity, **When** they select sign-in and are redirected to the identity provider, authenticate there, and are returned via the callback with a verified identity, **Then** the system recognizes the identity and grants access according to the configured mapping, landing on the same protected experience regardless of the granted role.
 2. **Given** a user is not mapped to any allowed access rule, **When** they sign in, **Then** the system denies access and presents a clear message.
+3. **Given** a user denies consent at the identity provider or the sign-in callback fails/returns an invalid state, **When** the flow returns to the application, **Then** the system redirects the user back to the sign-in page with a clear error message.
 
 ---
 
@@ -61,6 +70,7 @@ Administrators can review, enable or disable, and safely manage SSO settings so 
 - How does the system handle a provider that becomes temporarily unavailable or misconfigured?
 - What happens when two mapping rules conflict or overlap?
 - How does the system respond when an administrator disables a provider while users are already signed in?
+- What happens when a user denies consent at the identity provider, or the sign-in callback returns an error or invalid state? The system redirects back to the sign-in page with a clear error message rather than granting access or failing silently.
 
 ## Requirements *(mandatory)*
 
@@ -80,6 +90,9 @@ Administrators can review, enable or disable, and safely manage SSO settings so 
 - **FR-006**: The system MUST provide clear feedback for failed or blocked sign-in attempts caused by configuration or policy issues.
 - **FR-007**: The system MUST support a simple demo-mode fallback for local validation without weakening the production access-control model.
 - **FR-008**: The system MUST record sufficient sign-in and access-control activity for review and troubleshooting without exposing sensitive credentials.
+- **FR-009**: The production sign-in path MUST use a redirect-based flow to the configured identity provider's authorization endpoint and verify the returned identity token before evaluating access mappings; this is distinct from and MUST NOT be replaced by the demo-mode fallback (FR-007).
+- **FR-010**: When the identity provider callback fails, returns an invalid state, or the user denies consent, the system MUST redirect the user back to the sign-in page with a clear error message rather than granting access.
+- **FR-011**: The system MUST route every successfully granted identity to the same protected experience regardless of assigned role; role governs what a user can access there, not where they land after sign-in.
 
 ### Key Entities *(include if feature involves data)*
 

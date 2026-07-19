@@ -1,6 +1,8 @@
 from typing import Annotated
+from urllib.parse import quote
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import RedirectResponse
 
 from app.models.sso import (
     AccessMapping,
@@ -9,16 +11,51 @@ from app.models.sso import (
     SSOConfigResponse,
     SSOLoginRequest,
     SSOLoginResponse,
+    SSOProviderConfig,
     SSOProviderConfigInput,
     SSOValidateResponse,
     UserIdentity,
 )
+from app.config import settings
 from app.security import require_admin
 from app.services.access_evaluator import evaluate_access
-from app.services.oidc_client import fetch_server_metadata
+from app.services.oidc_client import build_oauth_client, fetch_server_metadata
 from app.services.sso_store import SsoConfigStore, get_sso_store
 
 router = APIRouter(prefix="/sso", tags=["sso"])
+
+_PROVIDER_UNAVAILABLE = "SSO provider is not configured or enabled"
+
+
+def _login_error_redirect(message: str) -> RedirectResponse:
+    return RedirectResponse(
+        f"{settings.client_base_url}/login?error={quote(message)}", status_code=302
+    )
+
+
+def _resolve_identity(provider: SSOProviderConfig, claims: dict) -> UserIdentity:
+    """Build a UserIdentity from a verified ID token's claims.
+
+    `claim_mapping` maps our identity field names to the provider's claim
+    keys (e.g. {"groups": "https://example.com/groups"}); a field with no
+    entry falls back to the claim of the same name.
+    """
+
+    def claim(field: str):
+        return claims.get(provider.claim_mapping.get(field, field))
+
+    def as_list(value) -> list[str]:
+        if not value:
+            return []
+        return value if isinstance(value, list) else [value]
+
+    return UserIdentity(
+        provider_id=provider.id,
+        subject=claims.get("sub", "") or claim("email") or "",
+        email=claim("email") or "",
+        groups=as_list(claim("groups")),
+        roles=as_list(claim("roles")),
+    )
 
 
 class SSOConfigRequest(SSOProviderConfigInput):
@@ -117,7 +154,7 @@ async def login(
     demo = store.get_demo_mode()
 
     if not demo.enabled:
-        return SSOLoginResponse(granted=False, reason="SSO provider is not configured or enabled")
+        return SSOLoginResponse(granted=False, reason=_PROVIDER_UNAVAILABLE)
 
     identity = UserIdentity(provider_id="demo", subject=email, email=email)
     policy = evaluate_access(identity, store.list_mappings())
@@ -128,3 +165,67 @@ async def login(
         email=email,
         reason=None if policy.allow else policy.description,
     )
+
+
+@router.get("/authorize")
+async def authorize(
+    request: Request,
+    store: Annotated[SsoConfigStore, Depends(get_sso_store)],
+):
+    """Production sign-in entry point (FR-009): redirect to the provider's authorization endpoint."""
+    provider = store.get_provider_config()
+    if provider is None or not provider.enabled:
+        raise HTTPException(status_code=503, detail=_PROVIDER_UNAVAILABLE)
+
+    client = build_oauth_client(provider)
+    return await client.authorize_redirect(request, provider.redirect_uri)
+
+
+@router.get("/callback")
+async def callback(
+    request: Request,
+    store: Annotated[SsoConfigStore, Depends(get_sso_store)],
+):
+    """The provider's configured redirect_uri target (FR-009/FR-010/FR-011).
+
+    Exchanges the code and verifies the ID token via Authlib, evaluates
+    access mappings, and either establishes a session + redirects to the
+    landing route (grant) or redirects to /login?error=... with no session
+    created (denial, missing attribute, or any Authlib exception).
+    """
+    provider = store.get_provider_config()
+    if provider is None or not provider.enabled:
+        return _login_error_redirect(_PROVIDER_UNAVAILABLE)
+
+    client = build_oauth_client(provider)
+    try:
+        token = await client.authorize_access_token(request)
+    except Exception as exc:
+        return _login_error_redirect(str(exc) or "Sign-in failed")
+
+    identity = _resolve_identity(provider, dict(token.get("userinfo") or {}))
+    policy = evaluate_access(identity, store.list_mappings())
+
+    if not policy.allow:
+        return _login_error_redirect(policy.description)
+
+    request.session["email"] = identity.email
+    request.session["role"] = policy.role
+    request.session["provider_id"] = provider.id
+    return RedirectResponse(settings.client_base_url + "/", status_code=302)
+
+
+@router.get("/session", response_model=SSOLoginResponse)
+async def get_session(request: Request):
+    """Lets the SPA ask "am I signed in?" on load, reading the server-verified session cookie."""
+    email = request.session.get("email")
+    if not email:
+        return SSOLoginResponse(granted=False)
+    return SSOLoginResponse(granted=True, role=request.session.get("role"), email=email)
+
+
+@router.post("/logout")
+async def sign_out(request: Request):
+    """Clears the session cookie. Idempotent — safe to call with no active session."""
+    request.session.clear()
+    return {"ok": True}

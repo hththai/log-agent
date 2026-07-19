@@ -16,6 +16,12 @@ class Settings(BaseSettings):
     sso_client_secret: str = ""
     sso_config_path: str = "app/data/sso_config.json"
     admin_api_token: str = ""
+    session_secret_key: str = ""
+    # Base URL of the client SPA. GET /sso/callback is reached by the browser
+    # navigating directly to this API's own origin (the provider redirect_uri),
+    # so its post-login redirects must be absolute — a relative "/login" would
+    # resolve against this API's origin, not the SPA's (they differ in dev).
+    client_base_url: str = "http://localhost:3000"
 
     class Config:
         env_file = ".env"

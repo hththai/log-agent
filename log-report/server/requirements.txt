@@ -16,3 +16,9 @@ httpx>=0.27
 # Authlib is the standard, actively maintained library for this in the
 # Starlette/FastAPI ecosystem rather than hand-rolling token verification.
 authlib>=1.3
+
+# Session signing (T033) — justification: hard transitive requirement of
+# Starlette's SessionMiddleware, itself required by Authlib's Starlette OAuth
+# client for state/nonce storage during the redirect round trip; reused for
+# the app's own post-login session cookie (see research.md).
+itsdangerous>=2.1

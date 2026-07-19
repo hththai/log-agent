@@ -89,3 +89,24 @@ export async function login(email: string): Promise<LoginResult> {
     })
     return parseOrThrow(res, 'Sign-in failed')
 }
+
+// Used as a plain navigation href (e.g. <a href={authorizeUrl()}>) — the
+// browser needs a real top-level redirect to the IdP, not a fetch call.
+export function authorizeUrl(): string {
+    return `${API_BASE}/sso/authorize`
+}
+
+export async function getSession(): Promise<LoginResult> {
+    const res = await fetch(`${API_BASE}/sso/session`, { credentials: 'include' })
+    return parseOrThrow(res, 'Failed to fetch session')
+}
+
+export async function logout(): Promise<void> {
+    const res = await fetch(`${API_BASE}/sso/logout`, {
+        method: 'POST',
+        credentials: 'include',
+    })
+    if (!res.ok) {
+        await parseOrThrow(res, 'Failed to log out')
+    }
+}

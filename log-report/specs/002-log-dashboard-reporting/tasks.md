@@ -20,7 +20,7 @@
 - [ ] T007 [P] Implement the public landing/demo route in `client/src/routes/index.tsx` that shows demo content to unauthenticated visitors
 - [ ] T008 [P] Implement `client/src/components/Demo/DemoSection.tsx` with key reporting capability summaries and a login CTA
 - [ ] T009 [P] Update `client/src/auth/AuthProvider.tsx` to expose `loginWithSso`, `logout`, `isAuthenticated`, and `user` fields
-- [ ] T010 [P] Verify the existing `server/app/routers/logs.py` contract matches the dashboard filters and document any backend expectations in `specs/002-log-dashboard-reporting/contracts/dashboard-api.md`
+- [ ] T010 [P] Reconcile the `server/app/routers/logs.py` contract with the FR-004 filters: the backend has no `service` or `report_type` query parameter — `GET /logs` supports only `level, status, method, from_time, to_time`, and service selection exists only via the `/logs/{table}` path. Decide whether the client maps "service" to a `/logs/{table}` call and whether "report type" is a client-only view concept (data-model.md's `ReportView.key`) with no backend equivalent — then update `specs/002-log-dashboard-reporting/contracts/dashboard-api.md` to document the actual, resolved contract before T012/T017 build against it.
 
 **Checkpoint**: Authentication, theme support, public demo, and API contract are ready for story work
 

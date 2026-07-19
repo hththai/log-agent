@@ -66,7 +66,7 @@ A visitor can view a public demo section that explains the product and highlight
 
 ### Functional Requirements
 
-- **FR-001**: The system MUST provide a lightweight SSO-style authentication experience for dashboard access using an email-based sign-in flow for v1.
+- **FR-001**: The system MUST provide an authenticated dashboard access experience. For v1 this was a lightweight, email-based sign-in flow; production sign-in is now defined by feature 003-sso-configuration (FR-009–FR-011), which requires a real IdP redirect flow with verified-token evaluation. The email-based flow described here is retained only as the demo-mode fallback specified in 003-FR-007.
 - **FR-002**: The system MUST support a protected dashboard area that requires authentication.
 - **FR-003**: The system MUST display a left-hand menu for navigating the dashboard.
 - **FR-004**: The system MUST support filtering reports across services, time ranges, and report types.
@@ -85,5 +85,5 @@ A visitor can view a public demo section that explains the product and highlight
 ## Assumptions
 
 - The dashboard uses existing log data and report structures available in the current application.
-- Authentication will be represented as a lightweight SSO-style session for the initial implementation, using an email-based sign-in flow.
+- Authentication was represented as a lightweight SSO-style session using an email-based sign-in flow for the initial v1 implementation. This has since been superseded for production sign-in by feature 003-sso-configuration's redirect-based OAuth flow (FR-009); the email-based flow now serves only as the local demo-mode fallback.
 - The demo section is informational and does not replace the authenticated reporting experience.

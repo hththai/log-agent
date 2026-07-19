@@ -9,6 +9,9 @@ import { TanStackDevtools } from '@tanstack/react-devtools'
 import TanStackQueryDevtools from '../integrations/tanstack-query/devtools'
 import { AuthProvider } from '../auth/AuthProvider'
 import { ThemeProvider } from '../components/Theme/ThemeProvider'
+import { ThemeToggle } from '../components/Theme/ThemeToggle'
+
+const THEME_INIT_SCRIPT = `(function(){try{var s=localStorage.getItem('theme-preference');var t=s==='dark'||s==='light'?s:(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.classList.toggle('dark',t==='dark');document.documentElement.dataset.theme=t}catch(e){}})();`
 
 import appCss from '../styles.css?url'
 
@@ -44,13 +47,16 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 
 function RootDocument({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <HeadContent />
+        {/* eslint-disable-next-line react/no-danger -- runs before hydration to avoid a flash of the wrong theme */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
       <body>
         <ThemeProvider>
           <AuthProvider>{children}</AuthProvider>
+          <ThemeToggle className="fixed top-4 right-4 z-50" />
         </ThemeProvider>
         <TanStackDevtools
           config={{

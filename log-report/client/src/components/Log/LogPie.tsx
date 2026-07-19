@@ -2,6 +2,7 @@ import { createContext, useContext, useState } from 'react'
 import { Pie, PieChart, Sector, Tooltip } from 'recharts';
 import type { PieSectorShapeProps, TooltipIndex, PieLabelRenderProps, PieSectorDataItem } from 'recharts';
 import type { ServiceCount } from '@/api/log'
+import { useTheme } from '@/components/Theme/ThemeProvider'
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 const RADIAN = Math.PI / 180;
@@ -91,6 +92,8 @@ function LogPie({
     readonly onSliceClick?: (service: string | null) => void;
 }) {
     const [selectedIndex, setSelectedIndex] = useState<number | undefined>(undefined)
+    const { theme } = useTheme()
+    const isDark = theme === 'dark'
 
     function handleClick(entry: PieSectorDataItem, index: number) {
         const next = selectedIndex === index ? undefined : index
@@ -100,7 +103,7 @@ function LogPie({
 
     return (
         <SelectedIndexContext.Provider value={selectedIndex}>
-            <div className='flex flex-col items-center'>
+            <div className='flex flex-col items-center gap-2 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900'>
                 <PieChart style={{ width: '100%', maxWidth: '500px', maxHeight: '80vh', aspectRatio: 1 }} responsive>
                     <Pie
                         data={data}
@@ -114,9 +117,21 @@ function LogPie({
                         onClick={handleClick}
                         style={{ cursor: 'pointer' }}
                     />
-                    <Tooltip defaultIndex={defaultIndex} />
+                    <Tooltip
+                        defaultIndex={defaultIndex}
+                        contentStyle={{
+                            backgroundColor: isDark ? '#0f172a' : '#ffffff',
+                            borderColor: isDark ? '#1e293b' : '#e2e8f0',
+                            borderRadius: 8,
+                            color: isDark ? '#f1f5f9' : '#0f172a',
+                        }}
+                        labelStyle={{ color: isDark ? '#f1f5f9' : '#0f172a' }}
+                        itemStyle={{ color: isDark ? '#f1f5f9' : '#0f172a' }}
+                    />
                 </PieChart>
-                {name?.trim() && (<span className='font-bold'>{name}</span>)}
+                {name?.trim() && (
+                    <span className='font-semibold text-slate-800 dark:text-slate-100'>{name}</span>
+                )}
             </div>
         </SelectedIndexContext.Provider>
     );

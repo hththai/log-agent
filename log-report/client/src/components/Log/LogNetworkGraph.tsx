@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useMemo } from 'react'
 import cytoscape from 'cytoscape'
 import type { Core, NodeSingular } from 'cytoscape'
 import type { LogItem } from '@/api/log'
+import { useTheme } from '@/components/Theme/ThemeProvider'
 
 // ── helpers ────────────────────────────────────────────────────────────────
 
@@ -33,77 +34,79 @@ interface EdgeWeight {
 
 // ── cytoscape style ────────────────────────────────────────────────────────
 
-const CY_STYLE: cytoscape.StylesheetJson = [
-    {
-        selector: 'node[type="service"]',
-        style: {
-            'background-color': '#6366f1',
-            'label': 'data(label)',
-            'color': '#fff',
-            'text-valign': 'center',
-            'text-halign': 'center',
-            'font-size': '11px',
-            'font-weight': 'bold',
-            'width': 80,
-            'height': 80,
-            'shape': 'round-rectangle',
-            'text-wrap': 'wrap',
-            'text-max-width': '70px',
+function getCyStyle(isDark: boolean): cytoscape.StylesheetJson {
+    return [
+        {
+            selector: 'node[type="service"]',
+            style: {
+                'background-color': '#6366f1',
+                'label': 'data(label)',
+                'color': '#fff',
+                'text-valign': 'center',
+                'text-halign': 'center',
+                'font-size': '11px',
+                'font-weight': 'bold',
+                'width': 80,
+                'height': 80,
+                'shape': 'round-rectangle',
+                'text-wrap': 'wrap',
+                'text-max-width': '70px',
+            },
         },
-    },
-    {
-        selector: 'node[type="ip"]',
-        style: {
-            'background-color': '#10b981',
-            'label': 'data(label)',
-            'color': '#1e293b',
-            'text-valign': 'bottom',
-            'text-halign': 'center',
-            'text-margin-y': 4,
-            'font-size': '10px',
-            'text-wrap': 'none',
-            'min-zoomed-font-size': 6,
-            'width': 'mapData(degree, 1, 20, 32, 64)',
-            'height': 'mapData(degree, 1, 20, 32, 64)',
-            'shape': 'ellipse',
+        {
+            selector: 'node[type="ip"]',
+            style: {
+                'background-color': '#10b981',
+                'label': 'data(label)',
+                'color': isDark ? '#e2e8f0' : '#1e293b',
+                'text-valign': 'bottom',
+                'text-halign': 'center',
+                'text-margin-y': 4,
+                'font-size': '10px',
+                'text-wrap': 'none',
+                'min-zoomed-font-size': 6,
+                'width': 'mapData(degree, 1, 20, 32, 64)',
+                'height': 'mapData(degree, 1, 20, 32, 64)',
+                'shape': 'ellipse',
+            },
         },
-    },
-    {
-        selector: 'node[type="ip"][external = "false"]',
-        style: {
-            'background-color': '#94a3b8',
+        {
+            selector: 'node[type="ip"][external = "false"]',
+            style: {
+                'background-color': isDark ? '#475569' : '#94a3b8',
+            },
         },
-    },
-    {
-        selector: 'edge',
-        style: {
-            'width': 'mapData(weight, 1, 500, 1, 6)',
-            'line-color': '#cbd5e1',
-            'target-arrow-color': '#cbd5e1',
-            'target-arrow-shape': 'triangle',
-            'curve-style': 'bezier',
-            'label': 'data(label)',
-            'font-size': '8px',
-            'color': '#64748b',
-            'text-rotation': 'autorotate',
+        {
+            selector: 'edge',
+            style: {
+                'width': 'mapData(weight, 1, 500, 1, 6)',
+                'line-color': isDark ? '#334155' : '#cbd5e1',
+                'target-arrow-color': isDark ? '#334155' : '#cbd5e1',
+                'target-arrow-shape': 'triangle',
+                'curve-style': 'bezier',
+                'label': 'data(label)',
+                'font-size': '8px',
+                'color': isDark ? '#94a3b8' : '#64748b',
+                'text-rotation': 'autorotate',
+            },
         },
-    },
-    {
-        selector: 'node:selected',
-        style: {
-            'border-width': 3,
-            'border-color': '#f59e0b',
+        {
+            selector: 'node:selected',
+            style: {
+                'border-width': 3,
+                'border-color': '#f59e0b',
+            },
         },
-    },
-    {
-        selector: 'node.faded, edge.faded',
-        style: { 'opacity': 0.15 },
-    },
-    {
-        selector: 'node.highlighted, edge.highlighted',
-        style: { 'opacity': 1 },
-    },
-]
+        {
+            selector: 'node.faded, edge.faded',
+            style: { 'opacity': 0.15 },
+        },
+        {
+            selector: 'node.highlighted, edge.highlighted',
+            style: { 'opacity': 1 },
+        },
+    ]
+}
 
 // ── component ──────────────────────────────────────────────────────────────
 
@@ -115,6 +118,8 @@ export function LogNetworkGraph({ data }: { readonly data: LogItem[] | undefined
     const [selectedServices, setSelectedServices] = useState<Set<string>>(new Set())
     const [showOnlyExternal, setShowOnlyExternal] = useState(false)
     const [tooltip, setTooltip] = useState<{ text: string; x: number; y: number } | null>(null)
+    const { theme } = useTheme()
+    const isDark = theme === 'dark'
 
     // ── derived data ───────────────────────────────────────────────────────
 
@@ -191,7 +196,7 @@ export function LogNetworkGraph({ data }: { readonly data: LogItem[] | undefined
         const cy = cytoscape({
             container: containerRef.current,
             elements: [...ipNodes, ...serviceNodes, ...edgeElements],
-            style: CY_STYLE,
+            style: getCyStyle(isDark),
             layout: {
                 name: 'cose',
                 animate: true,
@@ -256,7 +261,7 @@ export function LogNetworkGraph({ data }: { readonly data: LogItem[] | undefined
         cyRef.current = cy
 
         return () => { cy.destroy(); cyRef.current = null }
-    }, [filteredEdges])
+    }, [filteredEdges, isDark])
 
     // ── filter helpers ─────────────────────────────────────────────────────
 
@@ -271,12 +276,12 @@ export function LogNetworkGraph({ data }: { readonly data: LogItem[] | undefined
     // ── render ─────────────────────────────────────────────────────────────
 
     return (
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             {/* header */}
             <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-slate-800">IP ↔ Service Network</h2>
-                <div className="flex items-center gap-3 text-sm text-slate-600">
-                    <label className="flex items-center gap-1 cursor-pointer select-none">
+                <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-100">IP ↔ Service Network</h2>
+                <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-300">
+                    <label className="flex cursor-pointer items-center gap-1 select-none">
                         <input
                             type="checkbox"
                             checked={showOnlyExternal}
@@ -288,7 +293,8 @@ export function LogNetworkGraph({ data }: { readonly data: LogItem[] | undefined
                     {(selectedIps.size > 0 || selectedServices.size > 0) && (
                         <button
                             onClick={clearFilters}
-                            className="px-2 py-0.5 rounded bg-slate-200 hover:bg-slate-300 text-xs font-medium"
+                            className="cursor-pointer rounded bg-slate-200 px-2 py-0.5 text-xs font-medium hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700"
+                            type="button"
                         >
                             Clear filters
                         </button>
@@ -297,17 +303,17 @@ export function LogNetworkGraph({ data }: { readonly data: LogItem[] | undefined
             </div>
 
             {/* legend */}
-            <div className="flex gap-4 text-xs text-slate-500">
+            <div className="flex gap-4 text-xs text-slate-500 dark:text-slate-400">
                 <span className="flex items-center gap-1">
                     <span className="inline-block w-3 h-3 rounded-full bg-emerald-500" /> External IP
                 </span>
                 <span className="flex items-center gap-1">
-                    <span className="inline-block w-3 h-3 rounded-full bg-slate-400" /> Internal IP
+                    <span className="inline-block w-3 h-3 rounded-full bg-slate-400 dark:bg-slate-600" /> Internal IP
                 </span>
                 <span className="flex items-center gap-1">
                     <span className="inline-block w-3 h-3 rounded bg-indigo-500" /> Service
                 </span>
-                <span className="text-slate-400">Node size ∝ connections · Edge width ∝ request count</span>
+                <span className="text-slate-400 dark:text-slate-500">Node size ∝ connections · Edge width ∝ request count</span>
             </div>
 
             <div className="flex gap-3">
@@ -333,13 +339,13 @@ export function LogNetworkGraph({ data }: { readonly data: LogItem[] | undefined
                 </div>
 
                 {/* graph canvas */}
-                <div className="relative flex-1 rounded-xl border border-slate-200 bg-slate-50 overflow-hidden" style={{ height: 520 }}>
+                <div className="relative flex-1 overflow-hidden rounded-xl border border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-950" style={{ height: 520 }}>
                     <div ref={containerRef} className="w-full h-full" />
 
                     {/* tooltip */}
                     {tooltip && (
                         <div
-                            className="pointer-events-none absolute bg-slate-800 text-white text-xs px-2 py-1 rounded shadow-lg whitespace-nowrap"
+                            className="pointer-events-none absolute whitespace-nowrap rounded bg-slate-800 px-2 py-1 text-xs text-white shadow-lg dark:bg-slate-700"
                             style={{ left: tooltip.x + 12, top: tooltip.y - 10 }}
                         >
                             {tooltip.text}
@@ -348,28 +354,28 @@ export function LogNetworkGraph({ data }: { readonly data: LogItem[] | undefined
 
                     {/* empty state */}
                     {filteredEdges.length === 0 && (
-                        <div className="absolute inset-0 flex items-center justify-center text-slate-400 text-sm">
+                        <div className="absolute inset-0 flex items-center justify-center text-sm text-slate-400 dark:text-slate-600">
                             No connections match the current filters.
                         </div>
                     )}
 
                     {/* zoom hint */}
-                    <p className="absolute bottom-2 right-3 text-xs text-slate-400 pointer-events-none">
+                    <p className="pointer-events-none absolute bottom-2 right-3 text-xs text-slate-400 dark:text-slate-600">
                         Scroll to zoom · Click node to filter · Drag to pan
                     </p>
                 </div>
             </div>
 
             {/* stats bar */}
-            <div className="flex gap-6 text-sm text-slate-500 px-1">
+            <div className="flex gap-6 px-1 text-sm text-slate-500 dark:text-slate-400">
                 <span>
-                    <span className="font-semibold text-slate-700">{[...new Set(filteredEdges.map(e => e.ip))].length}</span> IPs
+                    <span className="font-semibold text-slate-700 dark:text-slate-200">{[...new Set(filteredEdges.map(e => e.ip))].length}</span> IPs
                 </span>
                 <span>
-                    <span className="font-semibold text-slate-700">{[...new Set(filteredEdges.map(e => e.service))].length}</span> Services
+                    <span className="font-semibold text-slate-700 dark:text-slate-200">{[...new Set(filteredEdges.map(e => e.service))].length}</span> Services
                 </span>
                 <span>
-                    <span className="font-semibold text-slate-700">{filteredEdges.reduce((s, e) => s + e.count, 0).toLocaleString()}</span> Requests
+                    <span className="font-semibold text-slate-700 dark:text-slate-200">{filteredEdges.reduce((s, e) => s + e.count, 0).toLocaleString()}</span> Requests
                 </span>
             </div>
         </div>
@@ -385,31 +391,31 @@ function FilterGroup({
     onToggle,
     colorClass,
     maxVisible = 50,
-}: {
+}: Readonly<{
     title: string
     items: string[]
     selected: Set<string>
     onToggle: (v: string) => void
     colorClass: string
     maxVisible?: number
-}) {
+}>) {
     const [expanded, setExpanded] = useState(false)
     const visible = expanded ? items : items.slice(0, maxVisible)
 
     return (
-        <div className="rounded-lg border border-slate-200 bg-white p-2 text-xs">
-            <p className="font-semibold text-slate-700 mb-1.5">{title}</p>
-            <div className="flex flex-col gap-0.5 max-h-48 overflow-y-auto">
+        <div className="rounded-lg border border-slate-200 bg-white p-2 text-xs dark:border-slate-800 dark:bg-slate-900">
+            <p className="mb-1.5 font-semibold text-slate-700 dark:text-slate-200">{title}</p>
+            <div className="flex max-h-48 flex-col gap-0.5 overflow-y-auto">
                 {visible.map(item => (
-                    <label key={item} className="flex items-center gap-1.5 cursor-pointer hover:bg-slate-50 rounded px-1 py-0.5">
-                        <span className={`w-2 h-2 rounded-full shrink-0 ${colorClass} ${selected.has(item) ? 'ring-2 ring-offset-1 ring-indigo-400' : 'opacity-50'}`} />
+                    <label key={item} className="flex cursor-pointer items-center gap-1.5 rounded px-1 py-0.5 hover:bg-slate-50 dark:hover:bg-slate-800">
+                        <span className={`w-2 h-2 rounded-full shrink-0 ${colorClass} ${selected.has(item) ? 'ring-2 ring-offset-1 ring-indigo-400 dark:ring-offset-slate-900' : 'opacity-50'}`} />
                         <input
                             type="checkbox"
                             className="hidden"
                             checked={selected.has(item)}
                             onChange={() => onToggle(item)}
                         />
-                        <span className={`truncate ${selected.has(item) ? 'text-slate-800 font-medium' : 'text-slate-500'}`}>
+                        <span className={`truncate ${selected.has(item) ? 'text-slate-800 font-medium dark:text-slate-100' : 'text-slate-500 dark:text-slate-400'}`}>
                             {item}
                         </span>
                     </label>
@@ -418,7 +424,8 @@ function FilterGroup({
             {items.length > maxVisible && (
                 <button
                     onClick={() => setExpanded(e => !e)}
-                    className="mt-1 text-indigo-500 hover:underline text-xs"
+                    className="mt-1 cursor-pointer text-xs text-indigo-500 hover:underline dark:text-indigo-400"
+                    type="button"
                 >
                     {expanded ? 'Show less' : `+${items.length - maxVisible} more`}
                 </button>

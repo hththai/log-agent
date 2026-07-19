@@ -8,7 +8,7 @@ interface LogInfoBarProps {
 
 export function LogInfoBar({ totalRequests, servicesCount, ipCount }: LogInfoBarProps) {
     return (
-        <div className='flex gap-x-2'>
+        <div className='flex flex-wrap gap-2'>
             <Info infoName={'Total Request'} value={totalRequests.toString()} />
             <Info infoName={'No Services'} value={servicesCount.toString()} />
             <Info infoName={'No IP'} value={ipCount.toString()} />

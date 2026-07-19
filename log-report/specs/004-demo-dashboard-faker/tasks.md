@@ -29,7 +29,7 @@ description: "Task list for Demo Dashboard with Faker Data"
 
 ## Constitution Alignment
 
-- Tasks MUST preserve clean code, simple UX, focused unit tests, and minimal dependencies.
+- Tasks MUST preserve clean code, simple UX, focused simple unit tests, and minimal dependencies.
 - UI tasks MUST include verification at common breakpoints.
 - Dependency changes MUST be treated as a separate task with justification and validation (see T001 — no new dependency, just activating an existing one).
 
@@ -39,7 +39,7 @@ description: "Task list for Demo Dashboard with Faker Data"
 
 **Purpose**: Stand up the one new module all stories build on.
 
-- [ ] T001 [P] Create `client/src/api/demoLog.ts` and confirm `@faker-js/faker` (already in `client/package.json`, currently unused) imports and resolves correctly (justification: activates an already-installed dependency — no `pnpm add` needed, per research.md §1)
+- [X] T001 [P] Create `client/src/api/demoLog.ts` and confirm `@faker-js/faker` (already in `client/package.json`, currently unused) imports and resolves correctly (justification: activates an already-installed dependency — no `pnpm add` needed, per research.md §1)
 
 ---
 
@@ -49,10 +49,10 @@ description: "Task list for Demo Dashboard with Faker Data"
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T002 [P] Extract the presentational body of `client/src/components/Log/LogReport.tsx` into a new `client/src/components/Log/LogReportView.tsx` accepting a `data: LogsResponse` prop; preserve the existing `selectedService` filter state and the `LogInfoBar`/`LogTable`/`LogPie`/`LogIpReport`/`LogNetworkGraph` composition unchanged (research.md §2)
-- [ ] T003 Update `client/src/components/Log/LogReport.tsx` to a thin wrapper: keep `useQuery({ queryKey: ['logData'], queryFn: getLogs })`, and on success render `<LogReportView data={data} />` instead of the inline JSX it used to own (depends on T002)
-- [ ] T004 Implement `generateDemoLogsResponse(): LogsResponse` in `client/src/api/demoLog.ts` using `@faker-js/faker`: 100-300 `LogItem` rows spread across `ocr_api`/`ocr_client`/`doc_invoice` (every service represented), every field populated (no nulls), `table: "demo"`, `page: 1`, `page_size: items.length` — per contracts/demo-data-generator.md and data-model.md (depends on T001)
-- [ ] T005 [P] Unit test for `generateDemoLogsResponse` in `client/src/api/demoLog.test.ts`: asserts `items.length` is within 100-300, all three sample services are represented, and every `LogItem` field is populated (contracts/demo-data-generator.md) (depends on T004)
+- [X] T002 [P] Extract the presentational body of `client/src/components/Log/LogReport.tsx` into a new `client/src/components/Log/LogReportView.tsx` accepting a `data: LogsResponse` prop; preserve the existing `selectedService` filter state and the `LogInfoBar`/`LogTable`/`LogPie`/`LogIpReport`/`LogNetworkGraph` composition unchanged (research.md §2)
+- [X] T003 Update `client/src/components/Log/LogReport.tsx` to a thin wrapper: keep `useQuery({ queryKey: ['logData'], queryFn: getLogs })`, and on success render `<LogReportView data={data} />` instead of the inline JSX it used to own (depends on T002)
+- [X] T004 Implement `generateDemoLogsResponse(): LogsResponse` in `client/src/api/demoLog.ts` using `@faker-js/faker`: 100-300 `LogItem` rows spread across `ocr_api`/`ocr_client`/`doc_invoice` (every service represented), every field populated (no nulls), `table: "demo"`, `page: 1`, `page_size: items.length` — per contracts/demo-data-generator.md and data-model.md (depends on T001)
+- [X] T005 [P] Unit test for `generateDemoLogsResponse` in `client/src/api/demoLog.test.ts`: asserts `items.length` is within 100-300, all three sample services are represented, and every `LogItem` field is populated (contracts/demo-data-generator.md) (depends on T004)
 
 **Checkpoint**: `LogReportView` and the demo data generator are ready — user story implementation can now begin.
 
@@ -66,10 +66,10 @@ description: "Task list for Demo Dashboard with Faker Data"
 
 ### Implementation for User Story 1
 
-- [ ] T006 [US1] Create `client/src/routes/demo.tsx` as a public route (`createFileRoute('/demo')`, no auth guard): generate the dataset once via a lazy `useState(() => generateDemoLogsResponse())` initializer (FR-009, research.md §5) and render `<LogReportView data={dataset} />` inside the same page-shell Tailwind pattern used by `login.tsx`/`index.tsx` (depends on T002, T004)
-- [ ] T007 [P] [US1] Update the unauthenticated branch of `client/src/routes/index.tsx`: replace the empty `return null` redirect-to-`/login` behavior with a public landing view containing a "View demo dashboard" link to `/demo` and a "Sign in" link to `/login`; leave the authenticated branch (`<LogReport />`) unchanged (research.md §3)
-- [ ] T008 [US1] Unit test for the `/demo` route in `client/src/routes/demo.test.tsx`: renders successfully, shows dashboard content (e.g., the info bar from `LogReportView`), and — mocking `getLogs` from `#/api/log` — asserts it is never called (depends on T006)
-- [ ] T009 [P] [US1] Unit test for the landing view in `client/src/routes/index.test.tsx`: an unauthenticated render shows the "View demo dashboard" link instead of redirecting; an authenticated render is unchanged from today's behavior (depends on T007)
+- [X] T006 [US1] Create `client/src/routes/demo.tsx` as a public route (`createFileRoute('/demo')`, no auth guard): generate the dataset once via a lazy `useState(() => generateDemoLogsResponse())` initializer (FR-009, research.md §5) and render `<LogReportView data={dataset} />` inside the same page-shell Tailwind pattern used by `login.tsx`/`index.tsx` (depends on T002, T004)
+- [X] T007 [P] [US1] Update the unauthenticated branch of `client/src/routes/index.tsx`: replace the empty `return null` redirect-to-`/login` behavior with a public landing view containing a "View demo dashboard" link to `/demo` and a "Sign in" link to `/login`; leave the authenticated branch (`<LogReport />`) unchanged (research.md §3)
+- [X] T008 [US1] Unit test for the `/demo` route in `client/src/routes/demo.test.tsx`: renders successfully, shows dashboard content (e.g., the info bar from `LogReportView`), and — mocking `getLogs` from `#/api/log` — asserts it is never called (depends on T006)
+- [X] T009 [P] [US1] Unit test for the landing view in `client/src/routes/index.test.tsx`: an unauthenticated render shows the "View demo dashboard" link instead of redirecting; an authenticated render is unchanged from today's behavior (depends on T007)
 
 **Checkpoint**: A signed-out visitor can reach `/demo` in one click and see a populated, real-API-free dashboard — User Story 1 is fully functional and independently testable.
 
@@ -83,8 +83,8 @@ description: "Task list for Demo Dashboard with Faker Data"
 
 ### Implementation for User Story 2
 
-- [ ] T010 [P] [US2] Component test in `client/src/components/Log/LogReportView.test.tsx`: given a `DemoDataset`-shaped `LogsResponse` fixture, selecting a service (via the pie chart's `onSliceClick` callback) filters the rendered table rows and info-bar counts to that service only (depends on T002)
-- [ ] T011 [US2] Extend `client/src/routes/demo.test.tsx` with a scenario asserting the `/demo` route's dataset stays stable while filtering — selecting then clearing a filter does not change the underlying total row count (validates FR-009 end-to-end, not just at the generator level) (depends on T008)
+- [X] T010 [P] [US2] Component test in `client/src/components/Log/LogReportView.test.tsx`: given a `DemoDataset`-shaped `LogsResponse` fixture, selecting a service (via the pie chart's `onSliceClick` callback) filters the rendered table rows and info-bar counts to that service only (depends on T002)
+- [X] T011 [US2] Extend `client/src/routes/demo.test.tsx` with a scenario asserting the `/demo` route's dataset stays stable while filtering — selecting then clearing a filter does not change the underlying total row count (validates FR-009 end-to-end, not just at the generator level) (depends on T008)
 
 **Checkpoint**: Filtering on `/demo` is proven to behave identically to the real dashboard's filtering — User Story 2 is independently testable.
 
@@ -98,11 +98,11 @@ description: "Task list for Demo Dashboard with Faker Data"
 
 ### Implementation for User Story 3
 
-- [ ] T012 [US3] Add a persistent sample-data banner to `client/src/routes/demo.tsx` (e.g., "You're viewing sample data — not live production data"), rendered above `LogReportView` so it's visible immediately on first render (FR-006, SC-004) (depends on T006)
-- [ ] T013 [US3] Add a "Sign in" call-to-action link to `/login` in `client/src/routes/demo.tsx`, visible alongside the sample-data banner (FR-007) (depends on T012 — same file)
-- [ ] T014 [US3] Wrap the `generateDemoLogsResponse()` call in `client/src/routes/demo.tsx` in a try/catch; on error, render "Demo preview unavailable — please retry" in place of the banner and `LogReportView`, with no fallback/hard-coded dataset (FR-010) (depends on T013 — same file)
-- [ ] T015 [US3] Unit test in `client/src/routes/demo.test.tsx`: mocking `generateDemoLogsResponse` to throw, asserts the error message renders instead of the dashboard chrome (depends on T014)
-- [ ] T016 [US3] Unit test in `client/src/routes/demo.test.tsx`: asserts the sample-data banner and sign-in link are present in the default (non-error) render (depends on T012, T013, T015)
+- [X] T012 [US3] Add a persistent sample-data banner to `client/src/routes/demo.tsx` (e.g., "You're viewing sample data — not live production data"), rendered above `LogReportView` so it's visible immediately on first render (FR-006, SC-004) (depends on T006)
+- [X] T013 [US3] Add a "Sign in" call-to-action link to `/login` in `client/src/routes/demo.tsx`, visible alongside the sample-data banner (FR-007) (depends on T012 — same file)
+- [X] T014 [US3] Wrap the `generateDemoLogsResponse()` call in `client/src/routes/demo.tsx` in a try/catch; on error, render "Demo preview unavailable — please retry" in place of the banner and `LogReportView`, with no fallback/hard-coded dataset (FR-010) (depends on T013 — same file)
+- [X] T015 [US3] Unit test in `client/src/routes/demo.test.tsx`: mocking `generateDemoLogsResponse` to throw, asserts the error message renders instead of the dashboard chrome (depends on T014)
+- [X] T016 [US3] Unit test in `client/src/routes/demo.test.tsx`: asserts the sample-data banner and sign-in link are present in the default (non-error) render (depends on T012, T013, T015)
 
 **Checkpoint**: All three user stories are independently functional — visitors can discover, use, and correctly interpret the demo dashboard.
 
@@ -112,9 +112,9 @@ description: "Task list for Demo Dashboard with Faker Data"
 
 **Purpose**: Breakpoint verification, end-to-end validation, and a final consistency pass.
 
-- [ ] T017 [P] Verify `/demo` and the updated `/` landing view at mobile/tablet/desktop breakpoints (constitution: UI tasks MUST include breakpoint verification)
-- [ ] T018 [P] Run `quickstart.md` validation end to end (all 7 scenarios) and record results
-- [ ] T019 Review `client/src/routes/demo.tsx`, `client/src/api/demoLog.ts`, and `client/src/components/Log/LogReportView.tsx` for consistent styling with the rest of the app, and confirm no reference to the real `/logs` API or `getLogs` exists anywhere on the `/demo` path
+- [X] T017 [P] Verify `/demo` and the updated `/` landing view at mobile/tablet/desktop breakpoints (constitution: UI tasks MUST include breakpoint verification)
+- [X] T018 [P] Run `quickstart.md` validation end to end (all 7 scenarios) and record results
+- [X] T019 Review `client/src/routes/demo.tsx`, `client/src/api/demoLog.ts`, and `client/src/components/Log/LogReportView.tsx` for consistent styling with the rest of the app, and confirm no reference to the real `/logs` API or `getLogs` exists anywhere on the `/demo` path
 
 ---
 

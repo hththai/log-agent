@@ -27,7 +27,7 @@ Removes an access mapping. (Implementation status: not yet built — tracked as 
 Validates a provider configuration (required fields, live OIDC discovery-document fetch) and returns whether it is ready for sign-in.
 
 ### POST /api/sso/login
-Demo-mode-only sign-in: accepts `{ email }`, resolves an identity directly from the submitted email, evaluates it against access mappings, and returns `{ granted, role?, email?, reason? }`. Does **not** verify the caller owns the email — this is the local-validation fallback (FR-007), not the production path.
+Demo-mode-only sign-in: accepts `{ email }`, resolves an identity directly from the submitted email, evaluates it against access mappings, and returns `{ granted, role?, email?, reason? }`. Does **not** verify the caller owns the email — this is the local-validation fallback (FR-007), not the production path. Grants **only** when `demo_mode.enabled` is true; a configured-and-enabled real provider does not by itself grant through this endpoint — real-provider access is only ever obtained via `/sso/authorize` → `/sso/callback` (see below), where the identity is verified. **Behavior change (G3, 2026-07-19)**: earlier builds also granted here when a real provider was enabled, with no token verification; that branch has been removed.
 
 ### GET /api/sso/authorize
 Production sign-in entry point. No request body — redirects the browser (302) to the configured provider's authorization endpoint, with Authlib managing CSRF `state` and OIDC `nonce` via the session cookie. Returns 503 if no provider is configured/enabled.

@@ -29,8 +29,12 @@ def _sso_test_env(tmp_path, monkeypatch):
     app.dependency_overrides.pop(get_sso_store, None)
 
 
-def _configure_provider(client):
-    res = client.post("/sso/config", json=PROVIDER_PAYLOAD, headers={"X-Admin-Token": ADMIN_TOKEN})
+def _configure_provider(client, demo_enabled=True):
+    payload = {
+        **PROVIDER_PAYLOAD,
+        "demo_mode": {"enabled": demo_enabled, "default_email": "", "allow_local_validation": True},
+    }
+    res = client.post("/sso/config", json=payload, headers={"X-Admin-Token": ADMIN_TOKEN})
     assert res.status_code == 200
 
 
@@ -101,6 +105,19 @@ def test_login_missing_required_attribute_is_denied(client):
 
     assert body["granted"] is False
     assert "groups" in body["reason"]
+
+
+def test_login_with_enabled_provider_but_demo_mode_disabled_is_denied(client):
+    """G3: an enabled real provider must never grant through POST /sso/login —
+    only the verified /sso/authorize -> /sso/callback flow may grant for it."""
+    _configure_provider(client, demo_enabled=False)
+    _add_mapping(client, expected_value="admin@example.com", role="admin")
+
+    res = client.post("/sso/login", json={"email": "admin@example.com"})
+    body = res.json()
+
+    assert body["granted"] is False
+    assert "not configured" in body["reason"]
 
 
 def test_login_falls_back_to_demo_mode_when_no_provider_configured(client):

@@ -13,3 +13,6 @@ GET {{host}}/logs/logs_doc_invoice
 
 ###
 GET {{host}}/logs
+
+###
+GET {{host}}/api/sso/config

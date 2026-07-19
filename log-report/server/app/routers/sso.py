@@ -103,29 +103,23 @@ async def login(
     payload: SSOLoginRequest,
     store: Annotated[SsoConfigStore, Depends(get_sso_store)],
 ):
-    """No admin auth — this is the end-user sign-in path.
+    """No admin auth — this is the demo-mode-only sign-in path (FR-007).
 
-    The full OIDC authorize-redirect/callback/token-exchange handshake is
-    out of scope for this pass (deferred, per tasks.md); the identity is
-    resolved directly from the submitted email, covering both a real
-    provider's post-redirect identity and the demo-mode fallback (FR-007)
-    with the same evaluation path.
+    Real-provider access MUST go through the verified `/sso/authorize` ->
+    `/sso/callback` redirect flow; this endpoint resolves an identity
+    directly from a submitted, unverified email, so it only ever grants
+    when demo mode is enabled.
     """
     email = payload.email.strip()
     if not email:
         return SSOLoginResponse(granted=False, reason="Email is required to sign in")
 
-    provider = store.get_provider_config()
     demo = store.get_demo_mode()
 
-    if provider is not None and provider.enabled:
-        provider_id = provider.id
-    elif demo.enabled:
-        provider_id = "demo"
-    else:
+    if not demo.enabled:
         return SSOLoginResponse(granted=False, reason="SSO provider is not configured or enabled")
 
-    identity = UserIdentity(provider_id=provider_id, subject=email, email=email)
+    identity = UserIdentity(provider_id="demo", subject=email, email=email)
     policy = evaluate_access(identity, store.list_mappings())
 
     return SSOLoginResponse(

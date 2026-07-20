@@ -51,7 +51,7 @@ describe('/ landing route', () => {
         expect(signInLink.getAttribute('href')).toBe('/login')
     })
 
-    it('renders the authenticated dashboard shell unchanged when signed in with a role', () => {
+    it('renders the authenticated dashboard experience instead of the public landing page when signed in with a role', () => {
         mockedUseAuth.mockReturnValue({
             isAuthenticated: true,
             user: { email: 'admin@example.com', role: 'admin' },
@@ -62,7 +62,8 @@ describe('/ landing route', () => {
 
         render(<Home />)
 
-        expect(screen.getByText('Welcome to your service dashboard')).toBeTruthy()
+        // getLogs never resolves in this test, so LogReport stays in its "Loading..." state.
+        expect(screen.getByText('Loading...')).toBeTruthy()
         expect(screen.queryByRole('link', { name: /view demo dashboard/i })).toBeNull()
     })
 })

@@ -2,6 +2,7 @@
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { LogReportView } from './LogReportView'
+import { ThemeProvider } from '@/components/Theme/ThemeProvider'
 import type { LogItem, LogsResponse } from '@/api/log'
 
 // cytoscape's canvas renderer isn't available in jsdom; LogNetworkGraph is out of
@@ -13,6 +14,21 @@ vi.mock('cytoscape', () => ({
         destroy: vi.fn(),
     }),
 }))
+
+// jsdom doesn't implement matchMedia; ThemeProvider (a LogNetworkGraph dependency
+// via useTheme) reads it on mount, so stub it the same way ThemeProvider itself expects.
+function stubMatchMedia() {
+    window.matchMedia = vi.fn().mockImplementation((query: string) => ({
+        matches: false,
+        media: query,
+        onchange: null,
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+    }))
+}
 
 // recharts renders no measurable SVG shapes under jsdom (no layout engine), so real
 // slice clicks aren't reachable. Stub LogPie to expose the onSliceClick contract
@@ -60,7 +76,7 @@ const fixture: LogsResponse = {
 }
 
 function totalRequestsValue() {
-    const card = screen.getByText('Total Request').closest('div')
+    const card = screen.getByText('Total Requests').closest('div')
     return within(card as HTMLElement).getByText(/^\d+$/).textContent
 }
 
@@ -89,5 +105,31 @@ describe('LogReportView', () => {
 
         fireEvent.click(screen.getByRole('button', { name: 'clear-selection' }))
         expect(totalRequestsValue()).toBe('5')
+    })
+
+    it('shows the Table & Chart group by default and hides the network diagram', () => {
+        render(<LogReportView data={fixture} />)
+
+        expect(screen.getByText('Total Requests')).toBeTruthy()
+        expect(screen.queryByText('IP ↔ Service Network')).toBeNull()
+    })
+
+    it('switches to the network diagram and back when the switcher is clicked', () => {
+        stubMatchMedia()
+        render(
+            <ThemeProvider>
+                <LogReportView data={fixture} />
+            </ThemeProvider>,
+        )
+
+        fireEvent.click(screen.getByRole('button', { name: /Network Diagram/i }))
+
+        expect(screen.queryByText('Total Requests')).toBeNull()
+        expect(screen.getByText('IP ↔ Service Network')).toBeTruthy()
+
+        fireEvent.click(screen.getByRole('button', { name: /Table & Chart/i }))
+
+        expect(screen.getByText('Total Requests')).toBeTruthy()
+        expect(screen.queryByText('IP ↔ Service Network')).toBeNull()
     })
 })

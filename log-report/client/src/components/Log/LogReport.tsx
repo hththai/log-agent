@@ -3,7 +3,12 @@ import { useQuery } from '@tanstack/react-query'
 import { getLogs } from '@/api/log'
 import { LogReportView } from '@/components/Log/LogReportView'
 
-export function LogReport() {
+interface LogReportProps {
+    readonly userEmail?: string
+    readonly onLogout?: () => void
+}
+
+export function LogReport({ userEmail, onLogout }: LogReportProps) {
     const { isPending, error, data } = useQuery({
         queryKey: ['logData'],
         queryFn: getLogs,
@@ -12,7 +17,7 @@ export function LogReport() {
     if (isPending) return 'Loading...'
     if (error) return 'An error has occurred: ' + error.message
 
-    return <LogReportView data={data} />
+    return <LogReportView data={data} userEmail={userEmail} onLogout={onLogout} />
 }
 
 export default LogReport;

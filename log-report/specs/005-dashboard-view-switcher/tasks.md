@@ -39,7 +39,7 @@ description: "Task list for Dashboard View Switcher"
 
 **Purpose**: Stand up the new component file every user story builds on.
 
-- [ ] T001 Scaffold `client/src/components/Log/DashboardViewSwitcher.tsx`: component shell with the prop interface from contracts/dashboard-view-switcher.md (`activeView: 'table' | 'diagram'`, `onChange: (view) => void`, `showDiagramOption: boolean`), rendering two `<button type="button">` elements inside a `<div role="group" aria-label="Dashboard view">` (no click wiring or icons yet) (justification: activates existing `lucide-react`, no `pnpm add` needed, per research.md §1)
+- [X] T001 Scaffold `client/src/components/Log/DashboardViewSwitcher.tsx`: component shell with the prop interface from contracts/dashboard-view-switcher.md (`activeView: 'table' | 'diagram'`, `onChange: (view) => void`, `showDiagramOption: boolean`), rendering two `<button type="button">` elements inside a `<div role="group" aria-label="Dashboard view">` (no click wiring or icons yet) (justification: activates existing `lucide-react`, no `pnpm add` needed, per research.md §1)
 
 ---
 
@@ -49,7 +49,7 @@ description: "Task list for Dashboard View Switcher"
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T002 In `client/src/components/Log/LogReportView.tsx`, add `activeView` state (`useState<'table' | 'diagram'>('table')`), render `<DashboardViewSwitcher activeView={activeView} onChange={setActiveView} showDiagramOption={true} />` above the existing content, and split the existing JSX into two conditionally-rendered groups gated on `activeView`: "Table & Chart" (`LogInfoBar` + `LogTable` + `LogPie`) and "Network Diagram" (`LogNetworkGraph`) — exactly one renders at a time (depends on T001; data-model.md, research.md §2, FR-002, FR-003)
+- [X] T002 In `client/src/components/Log/LogReportView.tsx`, add `activeView` state (`useState<'table' | 'diagram'>('table')`), render `<DashboardViewSwitcher activeView={activeView} onChange={setActiveView} showDiagramOption={true} />` above the existing content, and split the existing JSX into two conditionally-rendered groups gated on `activeView`: "Table & Chart" (`LogInfoBar` + `LogTable` + `LogPie`) and "Network Diagram" (`LogNetworkGraph`) — exactly one renders at a time (depends on T001; data-model.md, research.md §2, FR-002, FR-003)
 
 **Checkpoint**: Two view groups exist and can be toggled by directly setting state (click wiring not yet connected) — ready for story-specific interactive behavior.
 
@@ -63,9 +63,9 @@ description: "Task list for Dashboard View Switcher"
 
 ### Implementation for User Story 1
 
-- [ ] T003 [US1] In `client/src/components/Log/DashboardViewSwitcher.tsx`, finish the interactive markup: an icon (`lucide-react`) + text label per option, `aria-pressed={activeView === <that option>}`, `onClick={() => onChange(<that option>)}`, and active/inactive styling (`bg-cyan-600 text-white` active; `text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800` inactive) per research.md §1 and contracts/dashboard-view-switcher.md (depends on T002)
-- [ ] T004 [P] [US1] Unit test in `client/src/components/Log/DashboardViewSwitcher.test.tsx`: renders both options when `showDiagramOption` is `true`, clicking each option calls `onChange` with the corresponding value, and `aria-pressed` matches the `activeView` prop for each option (contracts/dashboard-view-switcher.md) (depends on T003)
-- [ ] T005 [US1] Unit test in `client/src/components/Log/LogReportView.test.tsx`: default render shows "Table & Chart" content (e.g., the info bar text) and does not render the network diagram; clicking the switcher's "Network Diagram" option shows the diagram and hides the table/chart group; clicking "Table & Chart" again restores it (depends on T003)
+- [X] T003 [US1] In `client/src/components/Log/DashboardViewSwitcher.tsx`, finish the interactive markup: an icon (`lucide-react`) + text label per option, `aria-pressed={activeView === <that option>}`, `onClick={() => onChange(<that option>)}`, and active/inactive styling (`bg-cyan-600 text-white` active; `text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800` inactive) per research.md §1 and contracts/dashboard-view-switcher.md (depends on T002)
+- [X] T004 [P] [US1] Unit test in `client/src/components/Log/DashboardViewSwitcher.test.tsx`: renders both options when `showDiagramOption` is `true`, clicking each option calls `onChange` with the corresponding value, and `aria-pressed` matches the `activeView` prop for each option (contracts/dashboard-view-switcher.md) (depends on T003)
+- [X] T005 [US1] Unit test in `client/src/components/Log/LogReportView.test.tsx`: default render shows "Table & Chart" content (e.g., the info bar text) and does not render the network diagram; clicking the switcher's "Network Diagram" option shows the diagram and hides the table/chart group; clicking "Table & Chart" again restores it (depends on T003)
 
 **Checkpoint**: A dashboard viewer can toggle between both views in one click, with "Table & Chart" as the default — User Story 1 is fully functional and independently testable (MVP).
 

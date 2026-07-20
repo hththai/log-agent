@@ -1,6 +1,6 @@
 # Log Collector
 
-A log pipeline for OCR services. A Go agent tails log files, parses them, and writes structured records to PostgreSQL. A Python/FastAPI server exposes a REST API to query those records.
+A log pipeline for reporting local services. A Go agent tails log files, parses them, and writes structured records to PostgreSQL. A Python/FastAPI server exposes a REST API to query those records.
 
 ```
 Log files (host)
@@ -18,10 +18,10 @@ Log files (host)
                     REST query API
 ```
 
-# Example
+## Example
 ![Project Demo](/log-report/demo/demo-desktop2.png)
 
-# Network with service
+## Network with services
 ![Network](/log-report/demo/demo-network.png)
 
 ## Components

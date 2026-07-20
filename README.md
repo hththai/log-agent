@@ -18,6 +18,12 @@ Log files (host)
                     REST query API
 ```
 
+# Example
+![Project Demo](/log-report/demo/demo-desktop2.png)
+
+# Network with service
+![Network](/log-report/demo/demo-network.png)
+
 ## Components
 
 |                           |                                                                                                                           |

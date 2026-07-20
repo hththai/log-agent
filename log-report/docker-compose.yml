@@ -54,6 +54,10 @@ services:
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
       DB_NAME: ${DB_NAME}
+      CLIENT_BASE_URL: https://${CLIENT_PUBLIC_DOMAIN}
+      SESSION_SECRET_KEY: ${SESSION_SECRET_KEY}
+      ADMIN_API_TOKEN: ${ADMIN_API_TOKEN}
+      CORS_ORIGINS: '["https://${CLIENT_PUBLIC_DOMAIN}"]'
     # No ports — internal only, plain HTTP within logging-network
     labels:
       - "traefik.enable=false"

@@ -20,8 +20,14 @@ const config = defineConfig({
     viteReact(),
     nitro({
       routeRules: {
-        // Browser calls /api/* → Nitro proxies to internal Python server
-        '/api/**': { proxy: `${internalApiUrl}/**` },
+        // Browser calls /api/* → Nitro proxies to internal Python server.
+        // fetchOptions.redirect: 'manual' is required — h3's proxy() calls
+        // the global fetch(), which follows redirects by default. Without
+        // this, a 302 from FastAPI (e.g. /sso/authorize -> Google) gets
+        // followed server-side and the target page's HTML is inlined into
+        // a 200 response under our own origin instead of reaching the
+        // browser as a real redirect.
+        '/api/**': { proxy: { to: `${internalApiUrl}/**`, fetchOptions: { redirect: 'manual' } } },
       },
     }),
   ],
